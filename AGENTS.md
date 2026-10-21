@@ -11,7 +11,7 @@ This file serves as the primary routing map for AI coding agents operating in th
 | **Framework** | Next.js (App Router, TypeScript) | Server components, API routes, multi-tenant campaign layouts |
 | **UI & Styling** | Tailwind CSS + shadcn/ui | Dark Victorian steampunk/gothic theme, responsive dialogs & forms |
 | **Database & Auth**| Supabase (PostgreSQL + RLS) | Multi-campaign tenancy, role-based isolation (GM vs Player), Realtime |
-| **Agent Context** | Graphify (`graphify-ts`) | AST knowledge graph for codebase navigation and rules indexing |
+| **Agent Context** | Graphify (`graphifyy`) | AST knowledge graph for codebase navigation, caller tracing, and blast radius analysis |
 
 ---
 
@@ -23,7 +23,7 @@ When handling specific feature requests, activate the corresponding skill:
 | :--- | :--- | :--- |
 | **Game Rules & Mechanics** | [blades-rules](file:///.agent/skills/blades-rules/SKILL.md) | Rolls, stress/trauma, harm, playbooks, downtime, payoffs, heat |
 | **Database & Multi-Tenancy** | [supabase-architecture](file:///.agent/skills/supabase-architecture/SKILL.md) | Schema design, RLS policies, GM vs player permissions, migrations |
-| **Code & Rule Graph Navigation** | [graphify-knowledge](file:///.agent/skills/graphify-knowledge/SKILL.md) | AST context indexing, symbol lookup, token-efficient queries |
+| **Code & Rule Graph Navigation** | [graphify](file:///.agent/skills/graphify/SKILL.md) / [graphify-knowledge](file:///.agent/skills/graphify-knowledge/SKILL.md) | AST context indexing, symbol lookup, token-efficient queries |
 | **Sprint & Feature Lifecycle** | [sprint-lifecycle](file:///.agent/skills/sprint-lifecycle/SKILL.md) | Sprint plan artifacts, 4-step execution loop, build verification & release |
 | **UI Components & Theming** | [ui-components](file:///.agent/skills/ui-components/SKILL.md) | shadcn/ui styling, linear progress clocks, dot ratings, sheets |
 
@@ -63,5 +63,5 @@ The directory [`.agent/knowledge/`](file:///.agent/knowledge/) contains determin
 1. **SRD Fidelity**: Never invent custom dice roll equations or violate stress/trauma/harm rules. Consult `.agent/knowledge/`.
 2. **Linear Clocks**: Clocks must render as segmented linear progress bars (not circular pie charts).
 3. **Strict Multi-Campaign Isolation**: Every table with campaign data must carry `campaign_id` with RLS enforcing GM vs Player permissions.
-4. **Context Precision**: Use Graphify AST and the knowledge files rather than reading raw bulk files into prompts.
+4. **Context Precision**: Use Graphify commands (`npm run graph:find`, `graph:callers`, `graph:blast`, `graph:summary`) and `graphify-out/GRAPH_REPORT.md` rather than reading raw bulk files into prompts.
 5. **Sprint Cadence Integrity**: Follow the mandatory 4-step loop per sprint (`npm run graphify` -> implement -> `npx tsc --noEmit` -> `npm run graphify` + atomic commit) and the local release protocol in `sprint-lifecycle`.
