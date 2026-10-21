@@ -126,11 +126,26 @@ This document specifies the data structure, baseline abilities, item sets, and X
 
 ## 3. Experience & Advancement Engine
 
-### XP Tracks
-1. **Playbook Track** (8 XP boxes): Unlocks 1 new Special Ability or an action dot in any rating.
-2. **Insight Track** (6 XP boxes): Unlocks 1 action dot in Hunt, Study, Survey, or Tinker.
-3. **Prowess Track** (6 XP boxes): Unlocks 1 action dot in Finesse, Prowl, Skirmish, or Wreck.
-4. **Resolve Track** (6 XP boxes): Unlocks 1 action dot in Attune, Command, Consort, or Sway.
+### Starting Action Dots (Character Creation Invariant)
+Every scoundrel begins with:
+* Baseline playbook default ratings (usually 2 dots).
+* **4 Starting Action Dots**:
+  - **2 Playbook Dots**: Allocated to actions belonging to the chosen playbook.
+  - **2 General Dots**: Allocated to any action.
+* **Rating Ceiling**: No action rating may exceed **2 dots** during character creation.
+
+### XP Tracks & Advancement Engine
+1. **Playbook Track** (8 XP boxes): When full (8 XP), spend 8 XP to choose 1 of 3 SRD advancement paths:
+   - **Playbook Ability**: Unlock an unlearned Special Ability from your playbook.
+   - **Veteran Ability**: Unlock a Special Ability from any of the other 6 scoundrel playbooks.
+   - **Action Dot**: +1 dot in any action rating across the sheet (max 4 dots).
+2. **Insight Track** (6 XP boxes): Spend 6 XP to advance +1 action dot in Hunt, Study, Survey, or Tinker (max 4 dots).
+3. **Prowess Track** (6 XP boxes): Spend 6 XP to advance +1 action dot in Finesse, Prowl, Skirmish, or Wreck (max 4 dots).
+4. **Resolve Track** (6 XP boxes): Spend 6 XP to advance +1 action dot in Attune, Command, Consort, or Sway (max 4 dots).
+
+### Play Mode vs. Manual Edit Mode Invariant
+* **Play Mode (Default)**: Action rating dots are locked against inline manipulation to safeguard against misclicks. Clicking an action row triggers an action roll.
+* **Edit Mode (Manual Override)**: Direct modification of dots and abilities is restricted to an explicit Edit Mode banner toggle for error correction.
 
 ### End of Session XP Triggers
 Every player answers 3 end-of-session trigger categories:

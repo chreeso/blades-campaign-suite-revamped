@@ -6,6 +6,41 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.4.0] — 2026-10-21
+
+### 🎯 Character Creation & Advancement Separation
+
+This milestone eliminates accidental stat manipulation during tabletop sessions by clearly separating character creation, active play, and advancement. Action dots are safeguarded against accidental misclicks in Play Mode with tactile full-row click-to-roll mechanics, an explicit Edit Mode override empowers manual corrections, and multi-track XP advancement provides full Blades SRD choices.
+
+#### 🌟 New Features & Enhancements
+
+* **Starting Action Dot Allocation Matrix (`CharacterCreator.tsx`)**:
+  * Enforces official Blades in the Dark character creation rules: scoundrels receive baseline playbook action ratings plus exactly **4 starting action dots** (2 into their playbook's actions, 2 into any actions).
+  * **Hard Cap**: No action rating may exceed **2 dots** at character creation.
+  * **Interactive Budget Indicators**: Live badges display `Playbook Dots: X / 2` and `General Dots: Y / 2` with visual feedback and submit validation safeguards.
+
+* **Play Mode Action Locking & Tactile Rolling (`CharacterSheet.tsx`)**:
+  * Action rating dots are locked against inline editing during regular sessions to prevent accidental misclicks.
+  * **Full-Row Click-to-Roll**: Clicking anywhere on an action row (label, dot indicators, or dice icon) initiates an action roll for that action pool.
+
+* **Explicit Manual "Edit Mode" Override (`CharacterSheet.tsx`)**:
+  * Added a dedicated `Edit / Done` toggle in the scoundrel sheet header for Players and GMs.
+  * Displays a prominent amber banner while active: *"Edit Mode Active: Direct stat editing enabled. Exit Edit Mode to roll actions."*
+  * Enables inline adjustment of dots, manual XP corrections, and toggling special ability unlock states for retroactive corrections.
+
+* **Multi-Track Attribute Advancement (`CharacterSheet.tsx`)**:
+  * Reaching 6 XP on Insight, Prowess, or Resolve activates an `Advance (6 XP)` button.
+  * Focused modal allows selecting any action in that attribute group to advance by +1 dot (up to the maximum of 4 dots), automatically deducting 6 XP.
+
+* **Comprehensive 3-Tab Playbook Advancement Modal (`CharacterSheet.tsx`)**:
+  * Reaching 8 Playbook XP activates the `Advance (8 XP)` button with full SRD rewards:
+    * **Playbook Ability**: Unlock any unlearned ability from the scoundrel's playbook.
+    * **Veteran Ability**: Learn a Special Ability from any of the other 6 scoundrel playbooks (with source playbook filtering).
+    * **Action Dot**: Advance any action rating across the sheet by +1 dot (max 4).
+  * Deducts 8 XP and persists the chosen upgrade.
+
+---
+
 ## [0.3.0] — 2026-10-21
 
 ### 🎭 Live Mid-Session NPC Creation & Contact Linking
