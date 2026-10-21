@@ -801,6 +801,8 @@ export default function Home() {
           <NpcTracker
             npcs={npcs}
             factions={factions}
+            characters={characters}
+            characterRelations={characterRelations}
             isGm={isGm}
             onUpdateNpc={handleUpdateNpc}
             onCreateNpc={handleCreateNpc}

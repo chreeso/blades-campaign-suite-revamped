@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { NPC, Faction, ContentVisibility } from '@/types/blades';
-import { Users, Plus, EyeOff, Eye, UserCheck, Shield, Edit2 } from 'lucide-react';
+import { NPC, Faction, ContentVisibility, Character, CharacterNpcRelation } from '@/types/blades';
+import { Users, Plus, EyeOff, Eye, UserCheck, Shield, Edit2, Search, Filter } from 'lucide-react';
 
 interface NpcTrackerProps {
   npcs: NPC[];
   factions?: Faction[];
+  characters?: Character[];
+  characterRelations?: CharacterNpcRelation[];
   isGm: boolean;
   onUpdateNpc?: (updated: NPC) => void;
   onCreateNpc?: (npc: Omit<NPC, 'id' | 'created_at' | 'updated_at'>) => void;
@@ -16,6 +18,8 @@ interface NpcTrackerProps {
 export function NpcTracker({
   npcs,
   factions = [],
+  characters = [],
+  characterRelations = [],
   isGm,
   onUpdateNpc,
   onCreateNpc,
@@ -32,9 +36,49 @@ export function NpcTracker({
   const [notes, setNotes] = useState('');
   const [visibility, setVisibility] = useState<ContentVisibility>('campaign_public');
 
-  // Filter NPCs based on GM visibility
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterFactionId, setFilterFactionId] = useState('all');
+  const [filterCharacterId, setFilterCharacterId] = useState('all');
+  const [filterBadge, setFilterBadge] = useState('all');
+
+  // Unique badges across all relations
+  const allPresentBadges = Array.from(new Set(characterRelations.flatMap((r) => r.badges)));
+
+  // Filter NPCs based on GM visibility & active filters
   const visibleNpcs = npcs.filter((npc) => {
     if (!isGm && npc.visibility === 'gm_only') return false;
+
+    // Search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchName = npc.name.toLowerCase().includes(q);
+      const matchAffil = npc.affiliation?.toLowerCase().includes(q);
+      const matchQuirk = npc.quirk?.toLowerCase().includes(q);
+      const matchNotes = isGm && npc.notes?.toLowerCase().includes(q);
+      if (!matchName && !matchAffil && !matchQuirk && !matchNotes) return false;
+    }
+
+    // Faction filter
+    if (filterFactionId === 'independent' && npc.faction_id) return false;
+    if (filterFactionId !== 'all' && filterFactionId !== 'independent' && npc.faction_id !== filterFactionId) return false;
+
+    // Character tie filter
+    if (filterCharacterId !== 'all') {
+      const hasTie = characterRelations.some(
+        (r) => r.npc_id === npc.id && r.character_id === filterCharacterId
+      );
+      if (!hasTie) return false;
+    }
+
+    // Badge filter
+    if (filterBadge !== 'all') {
+      const hasBadge = characterRelations.some(
+        (r) => r.npc_id === npc.id && r.badges.includes(filterBadge)
+      );
+      if (!hasBadge) return false;
+    }
+
     return true;
   });
 
@@ -93,10 +137,18 @@ export function NpcTracker({
 
   const romanTier = (tier: number) => ['0', 'I', 'II', 'III', 'IV', 'V', 'VI'][tier] || tier;
 
+  const getScoreTier = (score: number): { label: string; color: string; icon: string } => {
+    if (score <= 20) return { label: 'Arch-Enemy', color: 'text-red-400 bg-red-950/60 border-red-800', icon: '▼' };
+    if (score <= 40) return { label: 'Rival', color: 'text-rose-400 bg-rose-950/60 border-rose-800', icon: '▼' };
+    if (score <= 60) return { label: 'Neutral', color: 'text-zinc-400 bg-zinc-900 border-zinc-700', icon: '●' };
+    if (score <= 80) return { label: 'Ally', color: 'text-amber-400 bg-amber-950/60 border-amber-800', icon: '▲' };
+    return { label: 'Devoted Friend', color: 'text-yellow-300 bg-yellow-950/60 border-yellow-600', icon: '▲' };
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-amber-400" />
           <h3 className="font-serif text-lg font-bold text-zinc-100">NPCs, Contacts & Affiliations</h3>
@@ -112,15 +164,86 @@ export function NpcTracker({
         )}
       </div>
 
+      {/* Filter & Search Bar */}
+      <div className="p-3 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-between flex-wrap gap-3 text-xs">
+        {/* Search */}
+        <div className="flex items-center gap-2 bg-zinc-950 border border-zinc-700 rounded px-2.5 py-1.5 flex-1 min-w-[200px]">
+          <Search className="w-3.5 h-3.5 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Search NPCs by name, role, quirk..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-transparent text-xs text-zinc-100 outline-none w-full"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="text-zinc-500 hover:text-zinc-300">
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Faction Filter */}
+        <div className="flex items-center gap-1.5">
+          <Filter className="w-3.5 h-3.5 text-zinc-400" />
+          <select
+            value={filterFactionId}
+            onChange={(e) => setFilterFactionId(e.target.value)}
+            className="bg-zinc-950 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 outline-none"
+          >
+            <option value="all">All Factions</option>
+            <option value="independent">Independent only</option>
+            {factions.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Character Ties Filter */}
+        {characters.length > 0 && (
+          <select
+            value={filterCharacterId}
+            onChange={(e) => setFilterCharacterId(e.target.value)}
+            className="bg-zinc-950 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 outline-none"
+          >
+            <option value="all">All Scoundrel Ties</option>
+            {characters.map((c) => (
+              <option key={c.id} value={c.id}>
+                Tied to {c.name}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {/* Badge Filter */}
+        {allPresentBadges.length > 0 && (
+          <select
+            value={filterBadge}
+            onChange={(e) => setFilterBadge(e.target.value)}
+            className="bg-zinc-950 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 outline-none"
+          >
+            <option value="all">All Badges</option>
+            {allPresentBadges.map((b) => (
+              <option key={b} value={b}>
+                Badge: {b}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
       {/* NPCs Grid */}
       {visibleNpcs.length === 0 ? (
         <div className="p-8 text-center bg-zinc-900/50 rounded-lg border border-zinc-800 text-zinc-500 text-sm">
-          No NPC records found in this campaign.
+          No NPC records found matching current filters.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {visibleNpcs.map((npc) => {
             const affiliatedFaction = factions.find((f) => f.id === npc.faction_id);
+            const relationsForNpc = characterRelations.filter((r) => r.npc_id === npc.id);
 
             return (
               <div
@@ -176,6 +299,71 @@ export function NpcTracker({
                     <p className="text-xs text-zinc-300 mt-2 leading-relaxed whitespace-pre-wrap">
                       {npc.notes}
                     </p>
+                  )}
+
+                  {/* Scoundrel Connections */}
+                  {relationsForNpc.length > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-zinc-800/80 flex flex-col gap-1.5">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 flex items-center gap-1">
+                        <Users className="w-3 h-3 text-amber-400" /> Scoundrel Connections ({relationsForNpc.length})
+                      </span>
+                      <div className="flex flex-col gap-1.5">
+                        {relationsForNpc.map((rel) => {
+                          const char = characters.find((c) => c.id === rel.character_id);
+                          const tier = getScoreTier(rel.score);
+
+                          return (
+                            <div
+                              key={rel.id}
+                              className="p-1.5 rounded bg-zinc-950/70 border border-zinc-800/90 text-xs flex flex-col gap-1"
+                            >
+                              <div className="flex items-center justify-between gap-1 flex-wrap">
+                                <span className="font-semibold text-zinc-200">
+                                  {char?.name || 'Unknown Scoundrel'}
+                                  {char?.alias && (
+                                    <span className="text-zinc-400 text-[11px] font-normal">
+                                      {' '}
+                                      &ldquo;{char.alias}&rdquo;
+                                    </span>
+                                  )}
+                                </span>
+                                <span className={`px-1.5 py-0.5 rounded border text-[10px] font-bold flex items-center gap-1 ${tier.color}`}>
+                                  <span>{tier.icon}</span>
+                                  <span>{rel.score}/100</span>
+                                  <span className="opacity-80">({tier.label})</span>
+                                </span>
+                              </div>
+
+                              {rel.badges.length > 0 && (
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  {rel.badges.map((b) => (
+                                    <span
+                                      key={b}
+                                      className="px-1.5 py-0.2 rounded text-[10px] bg-zinc-800 text-amber-300/90 border border-zinc-700/60"
+                                    >
+                                      {b}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+
+                              {rel.public_notes && (
+                                <p className="text-[11px] text-zinc-400 italic">
+                                  &ldquo;{rel.public_notes}&rdquo;
+                                </p>
+                              )}
+
+                              {isGm && rel.private_notes && (
+                                <div className="text-[10px] text-purple-300 bg-purple-950/50 p-1 rounded border border-purple-800/60 font-mono">
+                                  <EyeOff className="w-2.5 h-2.5 inline mr-1" />
+                                  GM Secret: {rel.private_notes}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
 
