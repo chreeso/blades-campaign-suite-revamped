@@ -19,6 +19,8 @@ interface DiceRollerProps {
   defaultAction?: ActionName;
   defaultAttribute?: AttributeName;
   initialMode?: 'action' | 'resistance';
+  initialPosition?: RollPosition;
+  initialNarrative?: string;
   onUpdateCharacter: (updated: Character) => void;
   onUpdateClock: (updated: Clock) => void;
   onClose: () => void;
@@ -45,6 +47,8 @@ export function DiceRoller({
   defaultAction = 'skirmish',
   defaultAttribute = 'prowess',
   initialMode = 'action',
+  initialPosition,
+  initialNarrative,
   onUpdateCharacter,
   onUpdateClock,
   onClose
@@ -54,7 +58,7 @@ export function DiceRoller({
   const [selectedAttribute, setSelectedAttribute] = useState<AttributeName>(defaultAttribute);
 
   // Modifiers
-  const [position, setPosition] = useState<RollPosition>('Risky');
+  const [position, setPosition] = useState<RollPosition>(initialPosition || 'Risky');
   const [effect, setEffect] = useState<RollEffect>('Standard');
   const [pushDice, setPushDice] = useState(false);
   const [pushEffect, setPushEffect] = useState(false);
@@ -205,6 +209,19 @@ export function DiceRoller({
             </button>
           </div>
         </div>
+
+        {/* Engagement Context Banner */}
+        {initialNarrative && (
+          <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-600/40 flex items-start gap-2.5 text-xs text-amber-200">
+            <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex flex-col gap-0.5">
+              <span className="font-bold uppercase tracking-wider text-[10px] text-amber-400">
+                Score Engagement Opening
+              </span>
+              <p className="leading-relaxed text-zinc-300">{initialNarrative}</p>
+            </div>
+          </div>
+        )}
 
         {/* Action Selection & Parameters */}
         {rollMode === 'action' ? (

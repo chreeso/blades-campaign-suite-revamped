@@ -14,7 +14,10 @@ import {
   ActionName,
   AttributeName,
   CharacterNpcRelation,
-  CampaignRelationshipLabel
+  CampaignRelationshipLabel,
+  RollPosition,
+  OperationPlanType,
+  EngagementRollResult
 } from '@/types/blades';
 import { DOSKVOL_FACTIONS } from '@/lib/constants/doskvol';
 import { SCOUNDREL_PLAYBOOKS } from '@/lib/constants/playbooks';
@@ -28,6 +31,7 @@ import { NpcTracker } from '@/components/campaign/NpcTracker';
 import { JournalLedger } from '@/components/campaign/JournalLedger';
 import { CrewSheet } from '@/components/campaign/CrewSheet';
 import { DiceRoller } from '@/components/roller/DiceRoller';
+import { EngagementRollModal } from '@/components/roller/EngagementRollModal';
 import { DowntimeWizard } from '@/components/downtime/DowntimeWizard';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { CampaignInviteModal } from '@/components/campaign/CampaignInviteModal';
@@ -44,7 +48,8 @@ import {
   Hourglass,
   Server,
   UserPlus,
-  UserCheck
+  UserCheck,
+  Swords
 } from 'lucide-react';
 
 // Baseline initial data
@@ -339,6 +344,11 @@ export default function Home() {
   const [rollAction, setRollAction] = useState<ActionName>('skirmish');
   const [rollAttribute, setRollAttribute] = useState<AttributeName>('prowess');
   const [rollMode, setRollMode] = useState<'action' | 'resistance'>('action');
+  const [rollerInitialPosition, setRollerInitialPosition] = useState<RollPosition | undefined>(undefined);
+  const [rollerInitialNarrative, setRollerInitialNarrative] = useState<string | undefined>(undefined);
+
+  // Engagement Roll State
+  const [showEngagementModal, setShowEngagementModal] = useState(false);
 
   // Downtime Wizard State
   const [showDowntimeWizard, setShowDowntimeWizard] = useState(false);
@@ -667,6 +677,66 @@ export default function Home() {
     setTransactions((prev) => [newTx, ...prev]);
   };
 
+  // Engagement Roll Handlers
+  const handleLaunchFirstActionFromEngagement = (
+    position: RollPosition,
+    planType: OperationPlanType,
+    detail: string
+  ) => {
+    setRollerInitialPosition(position);
+    setRollerInitialNarrative(
+      `${planType} Plan ("${detail}"): Starting in ${position.toUpperCase()} position!`
+    );
+    setRollMode('action');
+    setShowEngagementModal(false);
+    setShowDiceRoller(true);
+  };
+
+  const handleLogScoreFromEngagement = (result: EngagementRollResult) => {
+    const advList: string[] = [];
+    if (result.factors.isBold) advList.push('Bold/Daring (+1d)');
+    if (result.factors.exposesVulnerability) advList.push('Exposes Vulnerability (+1d)');
+    if (result.factors.contactAssistance) advList.push('Contact Assistance (+1d)');
+    if (result.factors.priorSetup) advList.push('Prior Setup/Turf (+1d)');
+
+    const disadvList: string[] = [];
+    if (result.factors.isTargetFortified) disadvList.push('Target Fortified/High Alert (-1d)');
+    if (result.factors.isHostileDistrict) disadvList.push('Hostile District/War (-1d)');
+    if (result.factors.inclementWeather) disadvList.push('Supernatural/Weather Hazard (-1d)');
+
+    const logContent = `## Plan: ${result.factors.planType}
+**Detail**: ${result.factors.detail}
+**Target**: ${result.factors.targetFactionName || 'Independent'} (Tier ${result.factors.targetTier})
+**Crew Tier**: ${result.factors.crewTier}
+
+### Circumstances & Modifiers:
+- **Advantages**: ${advList.length > 0 ? advList.join(', ') : 'None'}
+- **Disadvantages**: ${disadvList.length > 0 ? disadvList.join(', ') : 'None'}
+- **Calculated Pool**: ${result.finalDicePool <= 0 ? '0d (took lowest of 2d)' : `${result.finalDicePool}d`} [Dice: ${result.dice.join(', ')}]
+- **Chosen Die**: ${result.chosenDie}
+
+### Initial Engagement Position:
+**${result.startingPosition.toUpperCase()}** ${result.isCritical ? '(Critical Success!)' : ''}
+${result.narrative}
+
+*Opening Friction*: ${result.initialObstaclePrompt}`;
+
+    const newScoreLog: JournalEntry = {
+      id: `jrn_score_${Date.now()}`,
+      campaign_id: activeCampaignId,
+      author_id: 'current_user',
+      title: `Score Launch: ${result.factors.planType} vs. ${result.factors.targetFactionName || 'Target'}`,
+      content: logContent,
+      entry_type: 'score_log',
+      visibility: 'campaign_public',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    setJournalEntries((prev) => [newScoreLog, ...prev]);
+    broadcastChange('journal_update', newScoreLog);
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
       {/* Top Navigation Bar */}
@@ -687,6 +757,15 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Score Plan / Engagement Roll Button */}
+            <button
+              onClick={() => setShowEngagementModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-950/80 border border-red-600/70 hover:bg-red-900/80 text-xs text-red-200 font-bold transition-all shadow-xs hover:scale-105"
+              title="Launch the Engagement Roll to establish operation plan and starting position"
+            >
+              <Swords className="w-3.5 h-3.5 text-red-400" /> Plan Score
+            </button>
+
             {/* Quick Add NPC Button */}
             <button
               onClick={() => setShowQuickNpcModal(true)}
@@ -925,9 +1004,26 @@ export default function Home() {
           defaultAction={rollAction}
           defaultAttribute={rollAttribute}
           initialMode={rollMode}
+          initialPosition={rollerInitialPosition}
+          initialNarrative={rollerInitialNarrative}
           onUpdateCharacter={handleUpdateCharacter}
           onUpdateClock={handleUpdateClock}
-          onClose={() => setShowDiceRoller(false)}
+          onClose={() => {
+            setShowDiceRoller(false);
+            setRollerInitialPosition(undefined);
+            setRollerInitialNarrative(undefined);
+          }}
+        />
+      )}
+
+      {/* Engagement Roll Modal */}
+      {showEngagementModal && (
+        <EngagementRollModal
+          crew={crew}
+          factions={factions}
+          onLaunchFirstAction={handleLaunchFirstActionFromEngagement}
+          onLogScore={handleLogScoreFromEngagement}
+          onClose={() => setShowEngagementModal(false)}
         />
       )}
 
