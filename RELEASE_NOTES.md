@@ -6,6 +6,31 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.4.2] — 2026-10-21
+
+### ⚓ Action Rating Cap (3 Dots) & Crew Mastery Gating
+
+This release strictly enforces the Blades in the Dark SRD Rules-As-Written (RAW p. 998 & 1409) governing action rating limits: action ratings are capped at **3 dots** during standard advancement, and can only reach **4 dots** when the crew has unlocked the **Mastery** upgrade.
+
+#### 🌟 Key Improvements
+
+* **Strict Action Rating Ceiling (`CharacterSheet.tsx`)**:
+  * Action ratings are capped at **3 dots** during normal play and advancement.
+  * Attempting to advance a 3-dot action without Crew Mastery is disabled in the UI, displaying `Needs Mastery`.
+  * Added an Action Cap & Mastery Banner in the advancement modal indicating the active cap (`Cap: 3 Dots` vs `Cap: 4 Dots`).
+  * In Edit Mode, manual dot setting is also clamped to 3 dots unless Crew Mastery is active or the user is the GM.
+
+* **Live Crew Mastery Integration (`CharacterSheet.tsx`, `page.tsx`)**:
+  * Connected `CharacterSheet` with the active campaign `Crew` state.
+  * Character advancement dynamically responds whenever the crew unlocks or modifies upgrades.
+
+* **Crew Upgrades & Training Management (`CrewSheet.tsx`)**:
+  * Added an interactive **Crew Upgrades & Training** panel to the Crew Sheet.
+  * Allows toggling key crew upgrades including **Mastery**, **Training** (Insight, Prowess, Resolve, Personal), **Hardened**, **Lair Security**, **Quality Weapons**, and **Fine Shadow Cloaks**.
+  * Unlocking Mastery immediately lifts the action rating cap to 4 dots for all crew members.
+
+---
+
 ## [0.4.1] — 2026-10-21
 
 ### ⚖️ SRD Attribute Advancement Alignment & Knowledge Sync

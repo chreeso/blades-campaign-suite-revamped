@@ -51,6 +51,19 @@ export function CrewSheet({ crew, isGm, onUpdateCrew }: CrewSheetProps) {
     });
   };
 
+  const toggleUpgrade = (upgradeName: string) => {
+    const exists = crew.upgrades.some((u) => u.toLowerCase() === upgradeName.toLowerCase());
+    const updatedUpgrades = exists
+      ? crew.upgrades.filter((u) => u.toLowerCase() !== upgradeName.toLowerCase())
+      : [...crew.upgrades, upgradeName];
+
+    onUpdateCrew({
+      ...crew,
+      upgrades: updatedUpgrades,
+      updated_at: new Date().toISOString()
+    });
+  };
+
   const updateVault = (delta: number) => {
     const nextVault = Math.max(0, Math.min(crew.vault_capacity, crew.coin_vault + delta));
     onUpdateCrew({
@@ -279,6 +292,106 @@ export function CrewSheet({ crew, isGm, onUpdateCrew }: CrewSheetProps) {
               Deposit Coin
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Crew Upgrades (Mastery & Training) */}
+      <div className="p-4 rounded-lg bg-zinc-900/90 border border-zinc-800 flex flex-col gap-3 shadow">
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs uppercase font-bold tracking-wider text-amber-400">
+              Crew Upgrades & Training
+            </span>
+            <span className="text-[10px] text-zinc-500 uppercase font-mono">
+              ({crew.upgrades.length} Active)
+            </span>
+          </div>
+          <span className="text-[11px] text-zinc-400 italic">
+            Unlock upgrades through crew advances & scores
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+          {[
+            {
+              id: 'Mastery',
+              name: 'Mastery',
+              desc: 'Enables scoundrels to advance action ratings to 4 dots (normally capped at 3).'
+            },
+            {
+              id: 'Training (Insight)',
+              name: 'Training: Insight',
+              desc: 'Mark +1 bonus XP when training Insight in downtime (2 XP total).'
+            },
+            {
+              id: 'Training (Prowess)',
+              name: 'Training: Prowess',
+              desc: 'Mark +1 bonus XP when training Prowess in downtime (2 XP total).'
+            },
+            {
+              id: 'Training (Resolve)',
+              name: 'Training: Resolve',
+              desc: 'Mark +1 bonus XP when training Resolve in downtime (2 XP total).'
+            },
+            {
+              id: 'Training (Personal)',
+              name: 'Training: Personal',
+              desc: 'Mark +1 bonus XP when training your Playbook in downtime (2 XP total).'
+            },
+            {
+              id: 'Hardened',
+              name: 'Hardened',
+              desc: 'Crew members can suffer +1 trauma before being forced into retirement.'
+            },
+            {
+              id: 'Lair Security',
+              name: 'Lair Security',
+              desc: 'Your lair is fortified with alarms, locks, and traps against intrusion.'
+            },
+            {
+              id: 'Quality Weapons',
+              name: 'Quality: Weapons',
+              desc: 'Improves the Tier quality rating of all weapons carried by the crew.'
+            },
+            {
+              id: 'Fine Shadow Cloaks',
+              name: 'Fine Shadow Cloaks',
+              desc: 'Camouflage cloaks tailored to blend invisibly with Doskvol shadows.'
+            }
+          ].map((upg) => {
+            const isUnlocked = crew.upgrades.some((u) => u.toLowerCase() === upg.id.toLowerCase());
+
+            return (
+              <button
+                key={upg.id}
+                type="button"
+                onClick={() => toggleUpgrade(upg.id)}
+                className={`p-2.5 rounded-lg border text-left flex flex-col gap-1 transition-all ${
+                  isUnlocked
+                    ? 'bg-amber-950/40 border-amber-500/80 shadow-xs'
+                    : 'bg-zinc-950 border-zinc-800/80 text-zinc-400 hover:border-zinc-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-bold ${isUnlocked ? 'text-amber-300' : 'text-zinc-300'}`}>
+                    {upg.name}
+                  </span>
+                  <span
+                    className={`text-[10px] uppercase font-mono px-1.5 py-0.2 rounded ${
+                      isUnlocked
+                        ? 'bg-amber-500 text-black font-bold'
+                        : 'bg-zinc-900 text-zinc-600'
+                    }`}
+                  >
+                    {isUnlocked ? 'Unlocked' : 'Locked'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-500 leading-snug">
+                  {upg.desc}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 

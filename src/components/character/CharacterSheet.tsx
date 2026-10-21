@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Character, ActionName, AttributeName, LoadCategory, NPC, Faction, CharacterNpcRelation, CampaignRelationshipLabel } from '@/types/blades';
+import { Character, Crew, ActionName, AttributeName, LoadCategory, NPC, Faction, CharacterNpcRelation, CampaignRelationshipLabel } from '@/types/blades';
 import { SYSTEM_RELATIONSHIP_BADGES, SCOUNDREL_PLAYBOOKS } from '@/lib/constants/playbooks';
 import { ScoundrelPlaybook } from '@/types/blades';
 import { DotRating } from '@/components/ui/DotRating';
@@ -12,6 +12,7 @@ import { QuickNpcModal, QuickNpcSubmitData } from '@/components/campaign/QuickNp
 
 interface CharacterSheetProps {
   character: Character;
+  crew?: Crew;
   onUpdateCharacter: (char: Character) => void;
   onRollAction?: (action: ActionName) => void;
   onRollResistance?: (attr: AttributeName) => void;
@@ -53,6 +54,7 @@ const LOAD_LIMITS: Record<LoadCategory, number> = {
 
 export function CharacterSheet({
   character,
+  crew,
   onUpdateCharacter,
   onRollAction,
   onRollResistance,
@@ -67,6 +69,9 @@ export function CharacterSheet({
   onQuickCreateNpc,
   isGm = false
 }: CharacterSheetProps) {
+  const hasMastery = crew?.upgrades?.some((u) => u.toLowerCase() === 'mastery') ?? false;
+  const maxActionDots = hasMastery ? 4 : 3;
+
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [advancingAttribute, setAdvancingAttribute] = useState<AttributeName | null>(null);
@@ -157,9 +162,12 @@ export function CharacterSheet({
 
   // Update handlers
   const updateDots = (action: ActionName, val: number) => {
+    // In edit mode, cap dot setting at 3 unless crew has Mastery or user is GM
+    const effectiveLimit = isGm || hasMastery ? 4 : 3;
+    const clampedVal = Math.min(effectiveLimit, Math.max(0, val));
     onUpdateCharacter({
       ...character,
-      action_dots: { ...character.action_dots, [action]: val },
+      action_dots: { ...character.action_dots, [action]: clampedVal },
       updated_at: new Date().toISOString()
     });
   };
@@ -230,7 +238,7 @@ export function CharacterSheet({
   const advanceAttributeAction = (action: ActionName) => {
     if (!advancingAttribute) return;
     const currentDots = character.action_dots[action] || 0;
-    if (currentDots >= 4) return;
+    if (currentDots >= maxActionDots) return;
     const xpKey = ATTRIBUTES[advancingAttribute].xpKey;
     onUpdateCharacter({
       ...character,
@@ -1044,10 +1052,34 @@ export function CharacterSheet({
               You have accumulated 6 {ATTRIBUTES[advancingAttribute].label} XP! Choose an action within {ATTRIBUTES[advancingAttribute].label} to advance by +1 dot (standard max 3 dots, or 4 with Mastery):
             </p>
 
+            {/* Action Cap & Mastery Banner */}
+            <div className={`p-2.5 rounded-lg border text-xs flex items-center justify-between ${
+              hasMastery
+                ? 'bg-amber-950/30 border-amber-500/40 text-amber-300'
+                : 'bg-zinc-950 border-zinc-800 text-zinc-400'
+            }`}>
+              <div>
+                <span className="font-bold uppercase tracking-wider">
+                  Action Rating Cap: {maxActionDots} Dots
+                </span>
+                <p className="text-[11px] text-zinc-500">
+                  {hasMastery
+                    ? 'Crew possesses Mastery upgrade. Action ratings can advance up to 4 dots.'
+                    : 'Standard cap is 3 dots. Advancing to 4 dots requires the Crew Mastery upgrade.'}
+                </p>
+              </div>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold ${
+                hasMastery ? 'bg-amber-500 text-black' : 'bg-zinc-800 text-zinc-400'
+              }`}>
+                {hasMastery ? 'Mastery Active' : 'No Mastery (Cap: 3)'}
+              </span>
+            </div>
+
             <div className="flex flex-col gap-2">
               {ATTRIBUTES[advancingAttribute].actions.map((act) => {
                 const currentDots = character.action_dots[act] || 0;
-                const isMax = currentDots >= 4;
+                const isMax = currentDots >= maxActionDots;
+                const needsMastery = currentDots === 3 && !hasMastery;
 
                 return (
                   <button
@@ -1061,7 +1093,7 @@ export function CharacterSheet({
                         {act}
                       </span>
                       <span className="text-[11px] text-zinc-500">
-                        Current rating: {currentDots} / 4 dots
+                        Current rating: {currentDots} / {maxActionDots} dots {needsMastery && '(Requires Crew Mastery to reach 4)'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1072,15 +1104,19 @@ export function CharacterSheet({
                             className={`w-2.5 h-2.5 rounded-xs border ${
                               i < currentDots
                                 ? 'bg-amber-400 border-amber-300'
-                                : i === currentDots
+                                : i === currentDots && !isMax
                                 ? 'bg-amber-500/30 border-dashed border-amber-400 animate-pulse'
                                 : 'bg-zinc-900 border-zinc-700'
                             }`}
                           />
                         ))}
                       </div>
-                      <span className="text-xs font-bold text-amber-400 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/30 group-hover:bg-amber-500 group-hover:text-black transition-colors">
-                        {isMax ? 'Maxed' : '+1 Dot'}
+                      <span className={`text-xs font-bold px-2 py-1 rounded border transition-colors ${
+                        isMax
+                          ? 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                          : 'bg-amber-500/10 border-amber-500/30 text-amber-400 group-hover:bg-amber-500 group-hover:text-black'
+                      }`}>
+                        {isMax ? (needsMastery ? 'Needs Mastery' : 'Maxed') : '+1 Dot'}
                       </span>
                     </div>
                   </button>
