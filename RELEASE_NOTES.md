@@ -6,6 +6,33 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.6.0] — 2026-10-21
+
+### 🏴‍☠️ Crew Advancements, Special Abilities, Cohorts & Bespoke Upgrades
+
+This major release elevates the **Crew Sheet** into a fully compliant operational headquarters matching the *Blades in the Dark* System Reference Document (RAW p. 91–152). It introduces the canonical **8-box Crew XP** advancement track, an interactive **Special Abilities selector**, a dedicated **Cohorts engine** for Gangs and Experts with harm tracking, and **playbook-specific unique upgrades** for all 6 crew types.
+
+#### 🌟 Key Improvements
+
+* **8-Box Crew XP & Advancement Engine (`CrewSheet.tsx`, `blades.ts`)**:
+  * Added `xp: number` (0 to 8) to the `Crew` model.
+  * Rendered as an 8-segment linear advancement bar with each playbook's canonical XP trigger displayed.
+  * Triggers an advancement alert banner when 8 XP is reached, prompting scoundrels to claim 1 new Crew Special Ability or 2 Crew Upgrades.
+
+* **Crew Special Abilities Interactive Matrix (`CrewSheet.tsx`, `playbooks.ts`)**:
+  * Fully modeled all canonical special abilities for Assassins, Bravos, Cults, Hawkers, Shadows, and Smugglers.
+  * Interactive cards with description, unlocked status toggle, and active badges.
+
+* **Cohorts System for Gangs & Specialists (`CohortCard.tsx`, `CrewSheet.tsx`)**:
+  * Model Gangs (Thugs, Rovers, Skulks, Adepts) and Experts (Physicians, Investigators, Spies).
+  * Scale tracker (0 to 3), Tier quality rating, and configurable Edges (*Fearsome, Independent, Loyal, Tenacious*) and Flaws (*Principled, Savage, Unreliable, Wild*).
+  * Cohort condition tracking (*Healthy, Impaired (-1d), Broken*), single-use Cohort Armor, and direct Quality roll resolution from the sheet.
+
+* **Playbook-Specific Unique Upgrades (`playbooks.ts`, `CrewSheet.tsx`)**:
+  * Expanded upgrade list with authentic playbook gear and lair assets (e.g. *Thief Rig, Smuggler Vehicle, Consecrated Ground, Iron Gate, Luxury Suite, Assassin Rig*).
+
+---
+
 ## [0.5.2] — 2026-10-21
 
 ### 📦 Complete RAW Downtime Activities Hub & Overindulgence Economy
