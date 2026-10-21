@@ -19,11 +19,15 @@ import {
   resolveViceRoll,
   resolveReduceHeatRoll,
   resolveRecoveryRoll,
+  resolveAcquireAssetRoll,
+  resolveLongTermProjectRoll,
   advanceHealingClock,
   cascadeHarmReduction,
   EntanglementRollResult,
   ViceRollResult,
-  RecoveryRollResult
+  RecoveryRollResult,
+  AcquireAssetRollResult,
+  LongTermProjectRollResult
 } from '@/lib/downtime';
 import {
   Hourglass,
@@ -38,7 +42,10 @@ import {
   ChevronLeft,
   Dices,
   RefreshCw,
-  Skull
+  Skull,
+  Package,
+  FolderKanban,
+  Plus
 } from 'lucide-react';
 
 interface DowntimeWizardProps {
@@ -136,6 +143,24 @@ export function DowntimeWizard({
   const [recoveryRoll, setRecoveryRoll] = useState<RecoveryRollResult | null>(null);
   const [harmDowngradedEvent, setHarmDowngradedEvent] = useState(false);
 
+  // Activity: Acquire Asset
+  const [assetName, setAssetName] = useState('');
+  const [assetBonusCoin, setAssetBonusCoin] = useState(0);
+  const [acquireAssetRoll, setAcquireAssetRoll] = useState<AcquireAssetRollResult | null>(null);
+
+  // Activity: Long-Term Project
+  const [projectClockId, setProjectClockId] = useState<string>(
+    clocks.find((c) => c.clock_type === 'project')?.id || clocks[0]?.id || ''
+  );
+  const [projectAction, setProjectAction] = useState<ActionName>('study');
+  const [newProjectClockName, setNewProjectClockName] = useState('');
+  const [newProjectClockSegments, setNewProjectClockSegments] = useState<4 | 6 | 8>(6);
+  const [showNewProjectInput, setShowNewProjectInput] = useState(false);
+  const [projectRoll, setProjectRoll] = useState<LongTermProjectRollResult | null>(null);
+
+  // Extra Activity Cost Payment
+  const [extraActivityPaymentType, setExtraActivityPaymentType] = useState<'coin' | 'rep'>('coin');
+
   // Calculate lowest attribute dots for Vice roll
   const getLowestAttrDots = () => {
     const attrCounts: Record<AttributeName, number> = { insight: 0, prowess: 0, resolve: 0 };
@@ -152,17 +177,31 @@ export function DowntimeWizard({
     setEntanglementResult(res);
   };
 
+  const chargeExtraActivity = (): string => {
+    if (activitiesUsed >= maxFreeActivities) {
+      if (extraActivityPaymentType === 'coin') {
+        setWorkingChar((prev) => ({ ...prev, coin: Math.max(0, prev.coin - 1) }));
+        return ' (-1 coin paid for extra activity)';
+      } else {
+        setWorkingCrew((prev) => ({ ...prev, rep: Math.max(0, prev.rep - 1) }));
+        return ' (-1 rep paid for extra activity)';
+      }
+    }
+    return '';
+  };
+
   const handleIndulgeVice = () => {
     const lowestDots = getLowestAttrDots();
     const res = resolveViceRoll(lowestDots, workingChar.stress);
     setViceResult(res);
     setWorkingChar((prev) => ({ ...prev, stress: res.newStress }));
+    const costNote = chargeExtraActivity();
     setActivitiesUsed((prev) => prev + 1);
     setActivitiesLog((prev) => [
       ...prev,
       `Indulged Vice (${character.vice}): cleared ${res.clearedStress} stress${
         res.overindulged ? ' [OVERINDULGED]' : ''
-      }`
+      }${costNote}`
     ]);
   };
 
@@ -170,6 +209,17 @@ export function DowntimeWizard({
     setOverindulgenceChoice(choice);
     if (choice === 'Attract Trouble' || choice === 'Brag') {
       setWorkingCrew((prev) => ({ ...prev, heat: Math.min(9, prev.heat + 2) }));
+      setActivitiesLog((prev) => [...prev, `Overindulgence (${choice}): +2 Heat added to crew`]);
+    } else if (choice === 'Lost') {
+      setActivitiesLog((prev) => [
+        ...prev,
+        `Overindulgence (Lost): ${workingChar.name} vanishes for a few weeks to carouse; play an alternate scoundrel next score.`
+      ]);
+    } else if (choice === 'Tapped') {
+      setActivitiesLog((prev) => [
+        ...prev,
+        `Overindulgence (Tapped): Vice purveyor (${character.vice_purveyor || 'Purveyor'}) cuts you off or refuses service.`
+      ]);
     }
   };
 
@@ -181,10 +231,11 @@ export function DowntimeWizard({
       ...prev,
       heat: Math.max(0, prev.heat - res.heatCleared)
     }));
+    const costNote = chargeExtraActivity();
     setActivitiesUsed((prev) => prev + 1);
     setActivitiesLog((prev) => [
       ...prev,
-      `Reduced Heat: cleared ${res.heatCleared} heat with Consort/Sway`
+      `Reduced Heat: cleared ${res.heatCleared} heat with Consort/Sway${costNote}`
     ]);
   };
 
@@ -194,8 +245,9 @@ export function DowntimeWizard({
       ...prev,
       [track]: Math.min(max, prev[track] + 1)
     }));
+    const costNote = chargeExtraActivity();
     setActivitiesUsed((prev) => prev + 1);
-    setActivitiesLog((prev) => [...prev, `Trained: +1 XP marked in ${track.replace('_', ' ')}`]);
+    setActivitiesLog((prev) => [...prev, `Trained: +1 XP marked in ${track.replace('_', ' ')}${costNote}`]);
   };
 
   const handleRecover = () => {
@@ -228,6 +280,7 @@ export function DowntimeWizard({
       harm: advanceRes.newHarm
     }));
 
+    const costNote = chargeExtraActivity();
     setActivitiesUsed((prev) => prev + 1);
     const sourceLabel =
       recoverySource === 'physicker'
@@ -238,7 +291,74 @@ export function DowntimeWizard({
       ...prev,
       `Recovered via ${sourceLabel}: rolled [${res.dice.join(', ')}] -> ${res.ticks} tick(s) marked${
         advanceRes.harmReduced ? ' [HARM DOWNGRADED!]' : ''
-      }`
+      }${costNote}`
+    ]);
+  };
+
+  const handleAcquireAsset = () => {
+    const res = resolveAcquireAssetRoll(workingCrew.tier, assetBonusCoin);
+    setAcquireAssetRoll(res);
+
+    // Deduct bonus coin spent
+    if (assetBonusCoin > 0) {
+      setWorkingChar((prev) => ({
+        ...prev,
+        coin: Math.max(0, prev.coin - assetBonusCoin)
+      }));
+    }
+
+    const costNote = chargeExtraActivity();
+    setActivitiesUsed((prev) => prev + 1);
+    const targetText = assetName.trim() || 'Temporary Asset';
+    setActivitiesLog((prev) => [
+      ...prev,
+      `Acquired Asset "${targetText}": Quality Tier ${res.finalQuality} [Dice: ${res.dice.join(', ')}]${costNote}`
+    ]);
+  };
+
+  const handleCreateNewProjectClock = () => {
+    if (!newProjectClockName.trim()) return;
+    const newClock: Clock = {
+      id: `clk_proj_${Date.now()}`,
+      campaign_id: campaignId,
+      name: newProjectClockName.trim(),
+      description: 'Long-term downtime project',
+      clock_type: 'project',
+      max_segments: newProjectClockSegments,
+      current_segments: 0,
+      visibility: 'campaign_public',
+      color_theme: 'amber',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setWorkingClocks((prev) => [...prev, newClock]);
+    setProjectClockId(newClock.id);
+    setNewProjectClockName('');
+    setShowNewProjectInput(false);
+  };
+
+  const handleWorkOnProject = () => {
+    const targetClock = workingClocks.find((c) => c.id === projectClockId);
+    if (!targetClock) return;
+
+    const dicePool = workingChar.action_dots[projectAction] || 0;
+    const res = resolveLongTermProjectRoll(dicePool);
+    setProjectRoll(res);
+
+    const nextSegs = Math.min(targetClock.max_segments, targetClock.current_segments + res.ticks);
+    const completed = nextSegs >= targetClock.max_segments;
+
+    setWorkingClocks((prev) =>
+      prev.map((c) => (c.id === targetClock.id ? { ...c, current_segments: nextSegs } : c))
+    );
+
+    const costNote = chargeExtraActivity();
+    setActivitiesUsed((prev) => prev + 1);
+    setActivitiesLog((prev) => [
+      ...prev,
+      `Project "${targetClock.name}": +${res.ticks} tick(s) with ${projectAction.toUpperCase()} (${nextSegs}/${targetClock.max_segments})${
+        completed ? ' [PROJECT COMPLETED!]' : ''
+      }${costNote}`
     ]);
   };
 
@@ -569,13 +689,48 @@ ${activitiesLog.map((log) => `  - ${log}`).join('\n')}`;
         {/* STEP 4: Downtime Activities Hub */}
         {currentStep === 4 && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2 flex-wrap gap-2">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
                 <Sparkles className="w-4 h-4" /> 4. Downtime Activities Hub
               </div>
-              <span className="text-xs font-mono font-bold text-zinc-300">
-                Activities: [{activitiesUsed} / {maxFreeActivities} free]
-              </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span
+                  className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
+                    activitiesUsed > maxFreeActivities
+                      ? 'bg-amber-950/80 border-amber-600 text-amber-300'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-300'
+                  }`}
+                >
+                  Activities: [{activitiesUsed} / {maxFreeActivities} free]
+                </span>
+                {activitiesUsed >= maxFreeActivities && (
+                  <div className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-950/40 border border-amber-800/60 rounded px-2 py-0.5">
+                    <span className="text-[10px] uppercase font-bold text-zinc-400">Pay extras with:</span>
+                    <button
+                      type="button"
+                      onClick={() => setExtraActivityPaymentType('coin')}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        extraActivityPaymentType === 'coin'
+                          ? 'bg-amber-500 text-black'
+                          : 'bg-zinc-900 text-zinc-400'
+                      }`}
+                    >
+                      1 Coin (Purse: {workingChar.coin})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExtraActivityPaymentType('rep')}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        extraActivityPaymentType === 'rep'
+                          ? 'bg-amber-500 text-black'
+                          : 'bg-zinc-900 text-zinc-400'
+                      }`}
+                    >
+                      1 Rep (Crew: {workingCrew.rep})
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -600,7 +755,10 @@ ${activitiesLog.map((log) => `  - ${log}`).join('\n')}`;
 
                 {viceResult && (
                   <div className="mt-1 text-xs text-zinc-300 flex flex-col gap-1">
-                    <span>Cleared <strong>{viceResult.clearedStress}</strong> stress! New Stress: <strong>{viceResult.newStress}/9</strong></span>
+                    <span>
+                      Cleared <strong>{viceResult.clearedStress}</strong> stress! New Stress:{' '}
+                      <strong>{viceResult.newStress}/9</strong>
+                    </span>
                     {viceResult.overindulged && (
                       <div className="p-2 rounded bg-red-950/60 border border-red-800 text-[11px] text-red-300">
                         <strong>OVERINDULGED!</strong> Select consequence:
@@ -791,6 +949,164 @@ ${activitiesLog.map((log) => `  - ${log}`).join('\n')}`;
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Activity 5: Acquire Asset */}
+              <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 flex flex-col justify-between gap-2.5">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-amber-400 flex items-center gap-1.5">
+                      <Package className="w-3.5 h-3.5" /> Acquire Asset
+                    </span>
+                    <span className="text-[10px] font-mono text-zinc-400">Crew Tier {workingCrew.tier}d</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400 mt-1">
+                    Acquire temporary gear, vehicle, contraband, or cohort service for the next score.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="text"
+                    value={assetName}
+                    onChange={(e) => setAssetName(e.target.value)}
+                    placeholder="Asset name (e.g. Rowboat, Arcane Ward, Gang of Thugs)..."
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 outline-none placeholder:text-zinc-600 focus:border-amber-500"
+                  />
+
+                  <div className="flex items-center justify-between text-xs text-zinc-400 px-1">
+                    <span>Bonus Coin (+1 Tier / coin):</span>
+                    <select
+                      value={assetBonusCoin}
+                      onChange={(e) => setAssetBonusCoin(Number(e.target.value))}
+                      className="bg-zinc-900 border border-zinc-700 rounded px-1.5 py-0.5 text-xs text-zinc-200 outline-none"
+                    >
+                      <option value={0}>0 Coin (+0)</option>
+                      <option value={1}>1 Coin (+1 Tier)</option>
+                      <option value={2}>2 Coin (+2 Tiers)</option>
+                      <option value={3}>3 Coin (+3 Tiers)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAcquireAsset}
+                  className="py-1.5 px-3 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-600/50 text-amber-300 text-xs font-semibold flex items-center justify-center gap-1.5"
+                >
+                  <Dices className="w-3.5 h-3.5 text-amber-400" /> Roll Acquire Asset ({workingCrew.tier}d)
+                </button>
+
+                {acquireAssetRoll && (
+                  <div className="p-2 rounded bg-zinc-900 border border-zinc-800 flex flex-col gap-1 text-xs animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400">Rolled: [{acquireAssetRoll.dice.join(', ')}]</span>
+                      <span className="font-bold text-amber-400">Tier {acquireAssetRoll.finalQuality} Asset</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-300 italic">{acquireAssetRoll.narrative}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Activity 6: Long-Term Project */}
+              <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 flex flex-col justify-between gap-2.5">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-indigo-400 flex items-center gap-1.5">
+                      <FolderKanban className="w-3.5 h-3.5" /> Long-Term Project
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewProjectInput((prev) => !prev)}
+                      className="text-[10px] text-indigo-300 hover:text-indigo-100 flex items-center gap-0.5"
+                    >
+                      <Plus className="w-3 h-3" /> New Clock
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-zinc-400 mt-1">
+                    Advance an investigation, research, crafting, or contact project clock.
+                  </p>
+                </div>
+
+                {showNewProjectInput ? (
+                  <div className="p-2 rounded bg-zinc-900 border border-zinc-800 flex flex-col gap-1.5">
+                    <span className="text-[10px] font-bold uppercase text-zinc-400">Create Project Clock:</span>
+                    <input
+                      type="text"
+                      value={newProjectClockName}
+                      onChange={(e) => setNewProjectClockName(e.target.value)}
+                      placeholder="Project name (e.g. Decode Cultist Cipher)..."
+                      className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 outline-none"
+                    />
+                    <div className="flex items-center justify-between text-xs">
+                      <select
+                        value={newProjectClockSegments}
+                        onChange={(e) => setNewProjectClockSegments(Number(e.target.value) as 4 | 6 | 8)}
+                        className="bg-zinc-950 border border-zinc-700 rounded px-1.5 py-0.5 text-xs text-zinc-200"
+                      >
+                        <option value={4}>4 Segments</option>
+                        <option value={6}>6 Segments</option>
+                        <option value={8}>8 Segments</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleCreateNewProjectClock}
+                        className="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
+                      >
+                        Create
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <select
+                      value={projectClockId}
+                      onChange={(e) => setProjectClockId(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs text-zinc-200 outline-none focus:border-indigo-500"
+                    >
+                      {workingClocks.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.current_segments}/{c.max_segments})
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="flex items-center justify-between text-xs text-zinc-400 px-1">
+                      <span>Action Rolled:</span>
+                      <select
+                        value={projectAction}
+                        onChange={(e) => setProjectAction(e.target.value as ActionName)}
+                        className="bg-zinc-900 border border-zinc-700 rounded px-1.5 py-0.5 text-xs text-zinc-200 uppercase outline-none"
+                      >
+                        {Object.keys(workingChar.action_dots).map((act) => (
+                          <option key={act} value={act}>
+                            {act} ({workingChar.action_dots[act as ActionName]}d)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleWorkOnProject}
+                  disabled={!projectClockId}
+                  className="py-1.5 px-3 rounded bg-indigo-950/60 hover:bg-indigo-900/60 border border-indigo-700 text-indigo-200 text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <Dices className="w-3.5 h-3.5 text-indigo-400" /> Roll Project (
+                  {workingChar.action_dots[projectAction] || 0}d)
+                </button>
+
+                {projectRoll && (
+                  <div className="p-2 rounded bg-zinc-900 border border-zinc-800 flex flex-col gap-1 text-xs animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400">Rolled: [{projectRoll.dice.join(', ')}]</span>
+                      <span className="font-bold text-indigo-300">+{projectRoll.ticks} Ticks Marked</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-300 italic">{projectRoll.narrative}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

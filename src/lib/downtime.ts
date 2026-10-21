@@ -152,14 +152,122 @@ export function resolveViceRoll(
 
   const chosenDie = isZeroDice ? Math.min(...dice) : Math.max(...dice);
   const overindulged = chosenDie > currentStress;
-  const newStress = Math.max(0, currentStress - chosenDie);
+  // RAW p. 156: You clear all your stress, but you overindulge
+  const clearedStress = currentStress;
+  const newStress = overindulged ? 0 : Math.max(0, currentStress - chosenDie);
 
   return {
     dice,
     chosenDie,
-    clearedStress: Math.min(currentStress, chosenDie),
+    clearedStress: overindulged ? currentStress : Math.min(currentStress, chosenDie),
     newStress,
     overindulged
+  };
+}
+
+export interface AcquireAssetRollResult {
+  dice: number[];
+  chosenDie: number;
+  isZeroDice: boolean;
+  isCritical: boolean;
+  baseQuality: number;
+  bonusCoin: number;
+  finalQuality: number;
+  narrative: string;
+}
+
+export function resolveAcquireAssetRoll(
+  crewTier: number,
+  bonusCoin: number = 0
+): AcquireAssetRollResult {
+  const isZeroDice = crewTier <= 0;
+  const diceCount = isZeroDice ? 2 : crewTier;
+  const dice = Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
+  const sixCount = dice.filter((d) => d === 6).length;
+  const isCritical = !isZeroDice && sixCount >= 2;
+  const chosenDie = isZeroDice ? Math.min(...dice) : Math.max(...dice);
+
+  let baseQuality = crewTier;
+  if (isCritical) {
+    baseQuality = crewTier + 2;
+  } else if (chosenDie === 6) {
+    baseQuality = crewTier + 1;
+  } else if (chosenDie >= 4) {
+    baseQuality = crewTier;
+  } else {
+    baseQuality = Math.max(0, crewTier - 1);
+  }
+
+  const finalQuality = baseQuality + bonusCoin;
+
+  let narrative = '';
+  if (isCritical) {
+    narrative = `Critical Success! Acquired exceptional Tier ${finalQuality} asset (+2 above crew tier).`;
+  } else if (chosenDie === 6) {
+    narrative = `Full Success! Acquired fine Tier ${finalQuality} asset (+1 above crew tier).`;
+  } else if (chosenDie >= 4) {
+    narrative = `Standard Success! Acquired standard Tier ${finalQuality} asset matching crew tier.`;
+  } else {
+    narrative = `Bad Outcome! Acquired inferior Tier ${finalQuality} asset (Tier - 1).`;
+  }
+
+  if (bonusCoin > 0) {
+    narrative += ` (${bonusCoin} coin spent boosted quality to Tier ${finalQuality}).`;
+  }
+
+  return {
+    dice,
+    chosenDie,
+    isZeroDice,
+    isCritical,
+    baseQuality,
+    bonusCoin,
+    finalQuality,
+    narrative
+  };
+}
+
+export interface LongTermProjectRollResult {
+  dice: number[];
+  chosenDie: number;
+  isZeroDice: boolean;
+  isCritical: boolean;
+  ticks: number;
+  narrative: string;
+}
+
+export function resolveLongTermProjectRoll(dicePool: number): LongTermProjectRollResult {
+  const isZeroDice = dicePool <= 0;
+  const diceCount = isZeroDice ? 2 : dicePool;
+  const dice = Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
+  const sixCount = dice.filter((d) => d === 6).length;
+  const isCritical = !isZeroDice && sixCount >= 2;
+  const chosenDie = isZeroDice ? Math.min(...dice) : Math.max(...dice);
+
+  let ticks = 1;
+  let narrative = '';
+
+  if (isCritical) {
+    ticks = 5;
+    narrative = 'Critical Breakthrough! +5 ticks marked on project clock.';
+  } else if (chosenDie === 6) {
+    ticks = 3;
+    narrative = 'Great Progress! +3 ticks marked on project clock.';
+  } else if (chosenDie >= 4) {
+    ticks = 2;
+    narrative = 'Standard Progress: +2 ticks marked on project clock.';
+  } else {
+    ticks = 1;
+    narrative = 'Slow Progress: +1 tick marked on project clock.';
+  }
+
+  return {
+    dice,
+    chosenDie,
+    isZeroDice,
+    isCritical,
+    ticks,
+    narrative
   };
 }
 
