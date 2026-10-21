@@ -1,6 +1,6 @@
 ---
 name: sprint-lifecycle
-description: Directs the end-to-end lifecycle for feature development: sprint plan artifact creation, strict per-sprint execution cadence, and sprint finish/release protocol.
+description: "Directs the end-to-end lifecycle for feature development: sprint plan artifact creation, strict per-sprint execution cadence, and sprint finish/release protocol."
 ---
 
 # Sprint Lifecycle & Feature Delivery Skill
