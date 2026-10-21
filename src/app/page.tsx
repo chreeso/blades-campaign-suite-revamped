@@ -12,13 +12,15 @@ import {
   JournalEntry,
   Transaction,
   ActionName,
-  AttributeName
+  AttributeName,
+  CharacterNpcRelation,
+  CampaignRelationshipLabel
 } from '@/types/blades';
 import { DOSKVOL_FACTIONS } from '@/lib/constants/doskvol';
 import { SCOUNDREL_PLAYBOOKS } from '@/lib/constants/playbooks';
 import { CampaignSwitcher } from '@/components/ui/CampaignSwitcher';
 import { CharacterSheet } from '@/components/character/CharacterSheet';
-import { CharacterCreator } from '@/components/character/CharacterCreator';
+import { CharacterCreator, CharacterContactSelection } from '@/components/character/CharacterCreator';
 import { ClocksManager } from '@/components/campaign/ClocksManager';
 import { FactionsTracker } from '@/components/campaign/FactionsTracker';
 import { NpcTracker } from '@/components/campaign/NpcTracker';
@@ -201,6 +203,7 @@ const INITIAL_NPCS: NPC[] = [
     id: 'npc_bazso',
     campaign_id: 'camp_crows_foot',
     name: 'Bazso Baz',
+    faction_id: INITIAL_FACTIONS.find((f) => f.name === 'The Lampblacks')?.id,
     affiliation: 'Leader, The Lampblacks',
     quirk: 'Never drinks alcohol; incessantly cleans his nails with a stiletto.',
     notes: 'Proposes an alliance against the Red Sashes. Promises turf in Crow’s Foot.',
@@ -212,6 +215,7 @@ const INITIAL_NPCS: NPC[] = [
     id: 'npc_mylera',
     campaign_id: 'camp_crows_foot',
     name: 'Mylera Klev',
+    faction_id: INITIAL_FACTIONS.find((f) => f.name === 'The Red Sashes')?.id,
     affiliation: 'Master, Red Sashes',
     quirk: 'Cold demeanor, perfectionist duelist with an Iruvian honor code.',
     notes: 'Suspects the crew robbed her courier on Silkshore canal.',
@@ -223,10 +227,53 @@ const INITIAL_NPCS: NPC[] = [
     id: 'npc_traitor_clerk',
     campaign_id: 'camp_crows_foot',
     name: 'Darmont (Bluecoat Clerk)',
+    faction_id: INITIAL_FACTIONS.find((f) => f.name === 'Bluecoats')?.id,
     affiliation: 'City Watch informant',
     quirk: 'Shifty eyes, gambling addict.',
     notes: 'GM SECRET: Darmont is also being blackmailed by the Unseen.',
     visibility: 'gm_only',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
+const INITIAL_CAMPAIGN_LABELS: CampaignRelationshipLabel[] = [
+  {
+    id: 'lbl_smuggling_contact',
+    campaign_id: 'camp_crows_foot',
+    name: 'Smuggling Partner',
+    color: 'emerald',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'lbl_blood_oath',
+    campaign_id: 'camp_crows_foot',
+    name: 'Blood Oath',
+    color: 'rose',
+    created_at: new Date().toISOString()
+  }
+];
+
+const INITIAL_CHARACTER_RELATIONS: CharacterNpcRelation[] = [
+  {
+    id: 'rel_corvo_bazso',
+    campaign_id: 'camp_crows_foot',
+    character_id: 'char_corvo',
+    npc_id: 'npc_bazso',
+    score: 85,
+    badges: ['Confidant', 'Debtor'],
+    public_notes: 'Fought alongside Bazso in the docks riot. He owes Corvo a favor.',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'rel_corvo_mylera',
+    campaign_id: 'camp_crows_foot',
+    character_id: 'char_corvo',
+    npc_id: 'npc_mylera',
+    score: 20,
+    badges: ['Creditor'],
+    public_notes: 'Mylera blames Corvo for an intercepted shipment of fine steel rapiers.',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
@@ -278,6 +325,8 @@ export default function Home() {
   const [clocks, setClocks] = useState<Clock[]>(INITIAL_CLOCKS);
   const [factions, setFactions] = useState<Faction[]>(INITIAL_FACTIONS);
   const [npcs, setNpcs] = useState<NPC[]>(INITIAL_NPCS);
+  const [characterRelations, setCharacterRelations] = useState<CharacterNpcRelation[]>(INITIAL_CHARACTER_RELATIONS);
+  const [campaignLabels, setCampaignLabels] = useState<CampaignRelationshipLabel[]>(INITIAL_CAMPAIGN_LABELS);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(INITIAL_JOURNAL);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
 
@@ -397,11 +446,78 @@ export default function Home() {
     setCharacters((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
   };
 
-  // Add Scoundrel
-  const handleCharacterCreated = (newChar: Character) => {
+  // Add Scoundrel with Contacts & Relations
+  const handleCharacterCreated = (newChar: Character, contacts: CharacterContactSelection) => {
     setCharacters((prev) => [...prev, newChar]);
     setActiveCharacterId(newChar.id);
+
+    const contactsToProcess = [
+      { contact: contacts.friend, score: 85 },
+      { contact: contacts.foe, score: 15 },
+      ...contacts.neutral.map((c) => ({ contact: c, score: 50 }))
+    ];
+
+    const newNpcsToAdd: NPC[] = [];
+    const newRelationsToAdd: CharacterNpcRelation[] = [];
+
+    contactsToProcess.forEach(({ contact, score }) => {
+      // Look for existing NPC by name in the campaign
+      let targetNpc = npcs.find((n) => n.name.toLowerCase() === contact.name.toLowerCase()) ||
+        newNpcsToAdd.find((n) => n.name.toLowerCase() === contact.name.toLowerCase());
+
+      if (!targetNpc) {
+        const matchingFaction = factions.find(
+          (f) => f.name.toLowerCase() === contact.suggestedFaction.toLowerCase()
+        );
+
+        targetNpc = {
+          id: `npc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          campaign_id: activeCampaignId,
+          name: contact.name,
+          faction_id: matchingFaction?.id,
+          affiliation: contact.suggestedFaction !== 'Independent' ? `${contact.suggestedRole}, ${contact.suggestedFaction}` : contact.suggestedRole,
+          quirk: contact.description,
+          visibility: 'campaign_public',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        newNpcsToAdd.push(targetNpc);
+      }
+
+      newRelationsToAdd.push({
+        id: `rel_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        campaign_id: activeCampaignId,
+        character_id: newChar.id,
+        npc_id: targetNpc.id,
+        score,
+        badges: [],
+        public_notes: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    });
+
+    if (newNpcsToAdd.length > 0) {
+      setNpcs((prev) => [...prev, ...newNpcsToAdd]);
+    }
+    setCharacterRelations((prev) => [...prev, ...newRelationsToAdd]);
     setShowCreator(false);
+  };
+
+  // Relations & Labels Handlers
+  const handleUpdateRelation = (updated: CharacterNpcRelation) => {
+    setCharacterRelations((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+  };
+
+  const handleCreateCampaignLabel = (name: string, color: string) => {
+    const newLabel: CampaignRelationshipLabel = {
+      id: `lbl_${Date.now()}`,
+      campaign_id: activeCampaignId,
+      name,
+      color,
+      created_at: new Date().toISOString()
+    };
+    setCampaignLabels((prev) => [...prev, newLabel]);
   };
 
   // Clocks
