@@ -19,10 +19,10 @@ This implementation plan details the architecture and sprint roadmap for {{FEATU
 
 > [!IMPORTANT]
 > **Every Sprint Protocol:**
-> 1. **Sprint Start**: Run `npm run graphify` to index the AST and dependency graph.
+> 1. **Sprint Start**: Run `npm run graph:update` to index the AST and dependency graph.
 > 2. **Sprint Implementation**: Write clean, modular TypeScript code conforming to project styling and Blades SRD mechanics.
 > 3. **Verification**: Run `npx tsc --noEmit` and confirm 0 errors.
-> 4. **Sprint Commit**: Re-run `npm run graphify` to refresh `.graphify/`, stage modified files, and produce an atomic git commit on `feature/{{BRANCH_NAME}}`.
+> 4. **Sprint Commit**: Re-run `npm run graph:update` to refresh the code graph, stage modified files, and produce an atomic git commit on `feature/{{BRANCH_NAME}}`.
 
 ---
 
@@ -72,5 +72,5 @@ This implementation plan details the architecture and sprint roadmap for {{FEATU
 * **Focus**: Knowledge base updates and AST graph indexation.
 * **Tasks**:
   1. Update relevant files in `.agent/knowledge/` if game mechanics or terms were added.
-  2. Execute `npm run graphify` to finalize `.graphify/index.md` and `.graphify/graph.json`.
+  2. Execute `npm run graph:update` to finalize code graph in `graphify-out/`.
 * **Commit**: `docs(knowledge): finalize graphify index for {{FEATURE_NAME}}`

@@ -308,3 +308,47 @@ export interface Crew {
   created_at: string;
   updated_at: string;
 }
+
+export interface SetupBonus {
+  id: string;
+  sourceCharacterName: string;
+  bonusType: 'effect' | 'position';
+  detail: string;
+  createdAt: string;
+}
+
+export interface GroupParticipantRoll {
+  characterId: string;
+  characterName: string;
+  dots: number;
+  dice: number[];
+  chosenDie: number;
+  outcome: RollResult['outcome'];
+  isZeroDice: boolean;
+  isLeader: boolean;
+  failed: boolean;
+}
+
+export interface GroupActionResult {
+  leaderId: string;
+  leaderName: string;
+  leaderStressCost: number;
+  bestOutcome: RollResult['outcome'];
+  bestDie: number;
+  isCritical: boolean;
+  overallTicks: number;
+  narrative: string;
+  participantRolls: GroupParticipantRoll[];
+}
+
+export interface IncarcerationOutcome {
+  dice: number[];
+  chosenDie: number;
+  isZeroDice: boolean;
+  isCritical: boolean;
+  outcome: 'critical' | 'full_success' | 'partial_success' | 'bad_outcome';
+  title: string;
+  narrative: string;
+  suggestedConsequences: string[];
+  prisonClaimsAvailable?: string[];
+}
