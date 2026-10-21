@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { Character, ActionName, AttributeName, LoadCategory, NPC, Faction, CharacterNpcRelation, CampaignRelationshipLabel } from '@/types/blades';
-import { SYSTEM_RELATIONSHIP_BADGES } from '@/lib/constants/playbooks';
+import { SYSTEM_RELATIONSHIP_BADGES, SCOUNDREL_PLAYBOOKS } from '@/lib/constants/playbooks';
+import { ScoundrelPlaybook } from '@/types/blades';
 import { DotRating } from '@/components/ui/DotRating';
 import { StressBar } from '@/components/ui/StressBar';
 import { HarmMatrix } from '@/components/ui/HarmMatrix';
@@ -69,6 +70,8 @@ export function CharacterSheet({
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [advancingAttribute, setAdvancingAttribute] = useState<AttributeName | null>(null);
+  const [levelUpTab, setLevelUpTab] = useState<'playbook' | 'veteran' | 'action'>('playbook');
+  const [veteranPlaybookFilter, setVeteranPlaybookFilter] = useState<string>('all');
   const [managingBadgesRelId, setManagingBadgesRelId] = useState<string | null>(null);
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('amber');
@@ -239,6 +242,38 @@ export function CharacterSheet({
       updated_at: new Date().toISOString()
     });
     setAdvancingAttribute(null);
+  };
+
+  const unlockVeteranAbility = (ability: { name: string; description: string }) => {
+    if (character.playbook_xp < 8) return;
+    const newAbility = {
+      name: ability.name,
+      description: ability.description,
+      unlocked: true
+    };
+    onUpdateCharacter({
+      ...character,
+      special_abilities: [...character.special_abilities, newAbility],
+      playbook_xp: Math.max(0, character.playbook_xp - 8),
+      updated_at: new Date().toISOString()
+    });
+    setShowLevelUpModal(false);
+  };
+
+  const advanceActionFromPlaybookXp = (action: ActionName) => {
+    if (character.playbook_xp < 8) return;
+    const currentDots = character.action_dots[action] || 0;
+    if (currentDots >= 4) return;
+    onUpdateCharacter({
+      ...character,
+      action_dots: {
+        ...character.action_dots,
+        [action]: currentDots + 1
+      },
+      playbook_xp: Math.max(0, character.playbook_xp - 8),
+      updated_at: new Date().toISOString()
+    });
+    setShowLevelUpModal(false);
   };
 
   const toggleAbilityManual = (abilityName: string) => {
@@ -1051,52 +1086,244 @@ export function CharacterSheet({
       )}
 
       {/* Level-Up Modal */}
-      {showLevelUpModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-xl bg-zinc-900 border border-amber-500 rounded-xl p-5 shadow-2xl flex flex-col gap-4 text-zinc-100">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-              <h3 className="font-serif text-base font-bold text-amber-400 flex items-center gap-2">
-                <Award className="w-5 h-5 text-amber-400" /> Scoundrel Advancement (Level Up)
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowLevelUpModal(false)}
-                className="text-xs text-zinc-400 hover:text-zinc-200"
-              >
-                ✕
-              </button>
-            </div>
+      {showLevelUpModal && (() => {
+        const otherPlaybooks = (Object.keys(SCOUNDREL_PLAYBOOKS) as ScoundrelPlaybook[]).filter(
+          (pb) => pb !== character.playbook
+        );
 
-            <p className="text-xs text-zinc-300">
-              You have accumulated 8 Playbook XP! Choose a new Special Ability to unlock:
-            </p>
+        const existingAbilityNames = new Set(character.special_abilities.map((a) => a.name));
 
-            <div className="flex flex-col gap-2 max-h-72 overflow-y-auto p-1">
-              {character.special_abilities
-                .filter((ab) => !ab.unlocked)
-                .map((ab) => (
-                  <button
-                    key={ab.name}
-                    onClick={() => unlockSpecialAbility(ab.name)}
-                    className="text-left p-3 rounded-lg bg-zinc-950 hover:bg-amber-950/40 border border-zinc-800 hover:border-amber-500 transition-all flex flex-col gap-1"
-                  >
-                    <span className="text-xs font-bold text-amber-400">{ab.name}</span>
-                    <span className="text-xs text-zinc-400">{ab.description}</span>
-                  </button>
-                ))}
-            </div>
+        const veteranAbilitiesList: { playbook: ScoundrelPlaybook; name: string; description: string }[] = [];
+        otherPlaybooks.forEach((pb) => {
+          SCOUNDREL_PLAYBOOKS[pb].specialAbilities.forEach((ab) => {
+            if (!existingAbilityNames.has(ab.name)) {
+              veteranAbilitiesList.push({ playbook: pb, name: ab.name, description: ab.description });
+            }
+          });
+        });
 
-            <div className="flex justify-end pt-2 border-t border-zinc-800">
-              <button
-                onClick={() => setShowLevelUpModal(false)}
-                className="px-3 py-1.5 text-xs rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
-              >
-                Cancel
-              </button>
+        const filteredVeteranAbilities =
+          veteranPlaybookFilter === 'all'
+            ? veteranAbilitiesList
+            : veteranAbilitiesList.filter((a) => a.playbook === veteranPlaybookFilter);
+
+        const availablePlaybookAbilities = character.special_abilities.filter((ab) => !ab.unlocked);
+
+        return (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <div className="w-full max-w-2xl bg-zinc-900 border border-amber-500 rounded-xl p-5 shadow-2xl flex flex-col gap-4 text-zinc-100 my-6">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <div className="flex items-center gap-2">
+                  <Award className="w-5 h-5 text-amber-400" />
+                  <h3 className="font-serif text-base font-bold text-amber-400">
+                    Scoundrel Advancement (8 Playbook XP)
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLevelUpModal(false)}
+                  className="text-xs text-zinc-400 hover:text-zinc-200"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="text-xs text-zinc-300 leading-snug">
+                You have accumulated 8 Playbook XP! Choose your reward according to Blades in the Dark rules: a special ability from your playbook, a veteran ability from another playbook, or +1 dot in any action (max 4).
+              </p>
+
+              {/* 3 Navigation Tabs */}
+              <div className="grid grid-cols-3 gap-2 border-b border-zinc-800 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setLevelUpTab('playbook')}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    levelUpTab === 'playbook'
+                      ? 'bg-amber-500 text-black shadow'
+                      : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Playbook Ability ({availablePlaybookAbilities.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLevelUpTab('veteran')}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    levelUpTab === 'veteran'
+                      ? 'bg-amber-500 text-black shadow'
+                      : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                  }`}
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  Veteran Ability
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLevelUpTab('action')}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    levelUpTab === 'action'
+                      ? 'bg-amber-500 text-black shadow'
+                      : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                  }`}
+                >
+                  <Dices className="w-3.5 h-3.5" />
+                  +1 Action Dot
+                </button>
+              </div>
+
+              {/* Tab 1: Playbook Ability */}
+              {levelUpTab === 'playbook' && (
+                <div className="flex flex-col gap-2 max-h-80 overflow-y-auto p-1">
+                  {availablePlaybookAbilities.length === 0 ? (
+                    <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-800 text-center text-xs text-zinc-400">
+                      All special abilities for {character.playbook} are already unlocked! Check the Veteran Ability or Action Dot tabs.
+                    </div>
+                  ) : (
+                    availablePlaybookAbilities.map((ab) => (
+                      <button
+                        key={ab.name}
+                        type="button"
+                        onClick={() => unlockSpecialAbility(ab.name)}
+                        className="text-left p-3 rounded-lg bg-zinc-950 hover:bg-amber-950/40 border border-zinc-800 hover:border-amber-500 transition-all flex flex-col gap-1 group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-amber-400 group-hover:text-amber-300">
+                            {ab.name}
+                          </span>
+                          <span className="text-[10px] text-zinc-400 uppercase font-mono px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">
+                            {character.playbook}
+                          </span>
+                        </div>
+                        <span className="text-xs text-zinc-400 leading-snug">{ab.description}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Tab 2: Veteran Ability */}
+              {levelUpTab === 'veteran' && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] text-zinc-400 uppercase font-bold mr-1">Filter Playbook:</span>
+                    <button
+                      type="button"
+                      onClick={() => setVeteranPlaybookFilter('all')}
+                      className={`text-[10px] px-2 py-0.5 rounded border ${
+                        veteranPlaybookFilter === 'all'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                          : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      All
+                    </button>
+                    {otherPlaybooks.map((pb) => (
+                      <button
+                        key={pb}
+                        type="button"
+                        onClick={() => setVeteranPlaybookFilter(pb)}
+                        className={`text-[10px] px-2 py-0.5 rounded border ${
+                          veteranPlaybookFilter === pb
+                            ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                            : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        {pb}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col gap-2 max-h-72 overflow-y-auto p-1">
+                    {filteredVeteranAbilities.map((ab) => (
+                      <button
+                        key={ab.name}
+                        type="button"
+                        onClick={() => unlockVeteranAbility(ab)}
+                        className="text-left p-3 rounded-lg bg-zinc-950 hover:bg-amber-950/40 border border-zinc-800 hover:border-amber-500 transition-all flex flex-col gap-1 group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-amber-400 group-hover:text-amber-300">
+                            {ab.name}
+                          </span>
+                          <span className="text-[10px] text-amber-400/80 uppercase font-mono px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800">
+                            Veteran: {ab.playbook}
+                          </span>
+                        </div>
+                        <span className="text-xs text-zinc-400 leading-snug">{ab.description}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: Action Dot (+1 Any) */}
+              {levelUpTab === 'action' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-h-80 overflow-y-auto p-1">
+                  {(Object.entries(ATTRIBUTES) as [AttributeName, { label: string; xpKey: string; actions: ActionName[] }][]).map(
+                    ([attrKey, attrData]) => (
+                      <div key={attrKey} className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 flex flex-col gap-2">
+                        <span className="text-[11px] uppercase font-bold tracking-wider text-amber-400 border-b border-zinc-800 pb-1">
+                          {attrData.label}
+                        </span>
+                        <div className="flex flex-col gap-1.5">
+                          {attrData.actions.map((act) => {
+                            const currentDots = character.action_dots[act] || 0;
+                            const isMax = currentDots >= 4;
+
+                            return (
+                              <button
+                                key={act}
+                                type="button"
+                                disabled={isMax}
+                                onClick={() => advanceActionFromPlaybookXp(act)}
+                                className="p-2 rounded bg-zinc-900 hover:bg-amber-950/40 border border-zinc-800 hover:border-amber-500 transition-all flex items-center justify-between disabled:opacity-40 disabled:cursor-not-allowed group text-left"
+                              >
+                                <span className="text-xs font-medium capitalize text-zinc-200 group-hover:text-amber-400">
+                                  {act}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <div className="flex items-center gap-0.5">
+                                    {Array.from({ length: 4 }, (_, i) => (
+                                      <div
+                                        key={i}
+                                        className={`w-2 h-2 rounded-xs border ${
+                                          i < currentDots
+                                            ? 'bg-amber-400 border-amber-300'
+                                            : i === currentDots
+                                            ? 'bg-amber-500/30 border-dashed border-amber-400 animate-pulse'
+                                            : 'bg-zinc-950 border-zinc-700'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-[10px] font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 group-hover:bg-amber-500 group-hover:text-black transition-colors">
+                                    {isMax ? 'Max' : '+1'}
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setShowLevelUpModal(false)}
+                  className="px-4 py-1.5 text-xs rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Connect / Add Contact Modal */}
       {showConnectModal && (
