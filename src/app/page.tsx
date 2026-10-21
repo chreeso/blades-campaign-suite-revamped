@@ -512,6 +512,16 @@ export default function Home() {
     setCharacterRelations((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
   };
 
+  const handleCreateRelation = (relData: Omit<CharacterNpcRelation, 'id' | 'created_at' | 'updated_at'>) => {
+    const newRel: CharacterNpcRelation = {
+      ...relData,
+      id: `rel_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setCharacterRelations((prev) => [...prev, newRel]);
+  };
+
   const handleCreateCampaignLabel = (name: string, color: string) => {
     const newLabel: CampaignRelationshipLabel = {
       id: `lbl_${Date.now()}`,
@@ -832,7 +842,9 @@ export default function Home() {
             campaignLabels={campaignLabels}
             onUpdateCharacter={handleUpdateCharacter}
             onUpdateRelation={handleUpdateRelation}
+            onCreateRelation={handleCreateRelation}
             onCreateCampaignLabel={handleCreateCampaignLabel}
+            onQuickCreateNpc={handleQuickNpcSubmit}
             onRollAction={handleRollAction}
             onRollResistance={handleRollResistance}
             isGm={isGm}

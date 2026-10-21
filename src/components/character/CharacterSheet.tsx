@@ -6,7 +6,8 @@ import { SYSTEM_RELATIONSHIP_BADGES } from '@/lib/constants/playbooks';
 import { DotRating } from '@/components/ui/DotRating';
 import { StressBar } from '@/components/ui/StressBar';
 import { HarmMatrix } from '@/components/ui/HarmMatrix';
-import { Coins, Sparkles, Backpack, Award, ArrowRight, ArrowLeft, Dices, ShieldCheck, Users, Shield, Plus, Tag, EyeOff, Check } from 'lucide-react';
+import { Coins, Sparkles, Backpack, Award, ArrowRight, ArrowLeft, Dices, ShieldCheck, Users, Shield, Plus, Tag, EyeOff, Check, UserPlus, Link2 } from 'lucide-react';
+import { QuickNpcModal, QuickNpcSubmitData } from '@/components/campaign/QuickNpcModal';
 
 interface CharacterSheetProps {
   character: Character;
@@ -19,7 +20,9 @@ interface CharacterSheetProps {
   relations?: CharacterNpcRelation[];
   campaignLabels?: CampaignRelationshipLabel[];
   onUpdateRelation?: (updated: CharacterNpcRelation) => void;
+  onCreateRelation?: (rel: Omit<CharacterNpcRelation, 'id' | 'created_at' | 'updated_at'>) => void;
   onCreateCampaignLabel?: (name: string, color: string) => void;
+  onQuickCreateNpc?: (data: QuickNpcSubmitData) => void;
   isGm?: boolean;
 }
 
@@ -58,13 +61,26 @@ export function CharacterSheet({
   relations = [],
   campaignLabels = [],
   onUpdateRelation,
+  onCreateRelation,
   onCreateCampaignLabel,
+  onQuickCreateNpc,
   isGm = false
 }: CharacterSheetProps) {
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [managingBadgesRelId, setManagingBadgesRelId] = useState<string | null>(null);
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('amber');
+
+  // Connect Contact Modal State
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [connectMode, setConnectMode] = useState<'create' | 'existing'>('existing');
+  const [selectedExistingNpcId, setSelectedExistingNpcId] = useState('');
+  const [existingScore, setExistingScore] = useState(50);
+  const [existingBadges, setExistingBadges] = useState<string[]>([]);
+  const [existingPublicNotes, setExistingPublicNotes] = useState('');
+  const [existingPrivateNotes, setExistingPrivateNotes] = useState('');
+
+  const unlinkedNpcs = npcs.filter((n) => !relations.some((r) => r.npc_id === n.id));
 
   const romanTier = (tier: number) => ['0', 'I', 'II', 'III', 'IV', 'V', 'VI'][tier] || tier;
 
@@ -104,6 +120,34 @@ export function CharacterSheet({
       });
     }
     setNewLabelName('');
+  };
+
+  const openConnectModal = () => {
+    const defaultNpc = unlinkedNpcs[0]?.id || '';
+    setSelectedExistingNpcId(defaultNpc);
+    setExistingScore(50);
+    setExistingBadges([]);
+    setExistingPublicNotes('');
+    setExistingPrivateNotes('');
+    setConnectMode(unlinkedNpcs.length > 0 ? 'existing' : 'create');
+    setShowConnectModal(true);
+  };
+
+  const handleConnectExistingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedExistingNpcId || !onCreateRelation) return;
+
+    onCreateRelation({
+      campaign_id: character.campaign_id,
+      character_id: character.id,
+      npc_id: selectedExistingNpcId,
+      score: existingScore,
+      badges: existingBadges,
+      public_notes: existingPublicNotes.trim() || undefined,
+      private_notes: existingPrivateNotes.trim() || undefined
+    });
+
+    setShowConnectModal(false);
   };
 
   // Update handlers
@@ -523,13 +567,24 @@ export function CharacterSheet({
 
       {/* Street Contacts & Relations (1-100 Grading Scale & Ties) */}
       <div className="p-4 rounded-lg bg-zinc-900/90 border border-zinc-800 flex flex-col gap-3 shadow">
-        <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-2 flex-wrap gap-2">
           <span className="text-xs uppercase font-bold tracking-wider text-amber-400 flex items-center gap-1.5">
             <Users className="w-4 h-4 text-amber-400" /> Street Contacts & Relations
           </span>
-          <span className="text-xs text-zinc-400 font-mono">
-            {relations.length} {relations.length === 1 ? 'contact' : 'contacts'}
-          </span>
+          <div className="flex items-center gap-2.5">
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={openConnectModal}
+                className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/50 hover:bg-amber-500/30 text-amber-300 transition-all shadow-xs"
+              >
+                <Plus className="w-3 h-3 text-amber-400" /> Connect / Add Contact
+              </button>
+            )}
+            <span className="text-xs text-zinc-400 font-mono">
+              {relations.length} {relations.length === 1 ? 'contact' : 'contacts'}
+            </span>
+          </div>
         </div>
 
         {relations.length === 0 ? (
@@ -913,6 +968,227 @@ export function CharacterSheet({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Connect / Add Contact Modal */}
+      {showConnectModal && (
+        connectMode === 'create' ? (
+          <QuickNpcModal
+            factions={factions}
+            characters={[character]}
+            campaignLabels={campaignLabels}
+            preselectedCharacterId={character.id}
+            isGm={isGm}
+            onSubmit={(data) => {
+              if (onQuickCreateNpc) onQuickCreateNpc(data);
+              setShowConnectModal(false);
+            }}
+            onClose={() => setShowConnectModal(false)}
+          />
+        ) : (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <form
+              onSubmit={handleConnectExistingSubmit}
+              className="w-full max-w-lg bg-zinc-900 border border-zinc-700 rounded-xl p-5 shadow-2xl flex flex-col gap-4 text-zinc-100 my-6"
+            >
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <div className="flex items-center gap-2">
+                  <Link2 className="w-4 h-4 text-amber-400" />
+                  <h3 className="font-serif text-sm font-bold text-amber-400">
+                    Connect Street Contact • {character.name}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowConnectModal(false)}
+                  className="text-xs text-zinc-400 hover:text-zinc-200"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Mode Switcher */}
+              <div className="flex items-center gap-2 bg-zinc-950 p-1 rounded-lg border border-zinc-800 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setConnectMode('existing')}
+                  className="flex-1 py-1.5 rounded font-semibold text-center transition-all bg-amber-500/20 text-amber-300 border border-amber-500/50"
+                >
+                  Connect Existing NPC
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConnectMode('create')}
+                  className="flex-1 py-1.5 rounded font-semibold text-center transition-all text-zinc-400 hover:text-zinc-200 border border-transparent"
+                >
+                  + Create Brand New NPC
+                </button>
+              </div>
+
+              {unlinkedNpcs.length === 0 ? (
+                <div className="p-4 bg-zinc-950 rounded border border-zinc-800 flex flex-col items-center gap-2 text-center text-xs text-zinc-400">
+                  <span>All campaign NPCs are already connected to {character.name}.</span>
+                  <button
+                    type="button"
+                    onClick={() => setConnectMode('create')}
+                    className="px-3 py-1 bg-amber-500 text-black font-semibold rounded text-xs"
+                  >
+                    Create New NPC Instead
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {/* Select NPC */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs uppercase font-medium text-zinc-400">
+                      Select Campaign NPC
+                    </label>
+                    <select
+                      value={selectedExistingNpcId}
+                      onChange={(e) => setSelectedExistingNpcId(e.target.value)}
+                      className="bg-zinc-950 border border-zinc-700 rounded px-2.5 py-2 text-xs text-zinc-100 outline-none focus:border-amber-500"
+                    >
+                      {unlinkedNpcs.map((n) => {
+                        const fac = factions.find((f) => f.id === n.faction_id);
+                        return (
+                          <option key={n.id} value={n.id}>
+                            {n.name} {fac ? `(${fac.name})` : '(Independent)'} {n.affiliation ? `• ${n.affiliation}` : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  {/* 1-100 Score Slider */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-zinc-400 text-[11px]">Sentiment Score (1=Foe, 100=Friend)</span>
+                      <span className="font-mono font-bold text-amber-400">{existingScore} / 100</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setExistingScore((s) => Math.max(1, s - 5))}
+                        className="px-2 py-0.5 rounded bg-zinc-800 text-xs text-zinc-300 font-mono"
+                      >
+                        -5
+                      </button>
+                      <input
+                        type="range"
+                        min="1"
+                        max="100"
+                        value={existingScore}
+                        onChange={(e) => setExistingScore(parseInt(e.target.value))}
+                        className="flex-1 accent-amber-500 cursor-pointer h-1.5 bg-zinc-800 rounded-lg appearance-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setExistingScore((s) => Math.min(100, s + 5))}
+                        className="px-2 py-0.5 rounded bg-zinc-800 text-xs text-zinc-300 font-mono"
+                      >
+                        +5
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Badges Toggles */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] text-zinc-400 flex items-center gap-1">
+                      <Tag className="w-3 h-3 text-amber-400" /> Relationship Badges (Optional)
+                    </label>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {SYSTEM_RELATIONSHIP_BADGES.map((b) => {
+                        const isSelected = existingBadges.includes(b.name);
+                        return (
+                          <button
+                            key={b.name}
+                            type="button"
+                            onClick={() =>
+                              setExistingBadges((prev) =>
+                                prev.includes(b.name) ? prev.filter((x) => x !== b.name) : [...prev, b.name]
+                              )
+                            }
+                            className={`px-2 py-0.5 rounded text-[10px] border flex items-center gap-1 transition-all ${
+                              isSelected
+                                ? 'bg-amber-500 text-black border-amber-400 font-bold'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                            }`}
+                          >
+                            {isSelected && <Check className="w-2.5 h-2.5" />}
+                            {b.name}
+                          </button>
+                        );
+                      })}
+                      {campaignLabels.map((l) => {
+                        const isSelected = existingBadges.includes(l.name);
+                        return (
+                          <button
+                            key={l.id}
+                            type="button"
+                            onClick={() =>
+                              setExistingBadges((prev) =>
+                                prev.includes(l.name) ? prev.filter((x) => x !== l.name) : [...prev, l.name]
+                              )
+                            }
+                            className={`px-2 py-0.5 rounded text-[10px] border flex items-center gap-1 transition-all ${
+                              isSelected
+                                ? 'bg-emerald-500 text-black border-emerald-400 font-bold'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                            }`}
+                          >
+                            {isSelected && <Check className="w-2.5 h-2.5" />}
+                            {l.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Narrative Notes */}
+                  <div className="flex flex-col gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="Public narrative connection..."
+                      value={existingPublicNotes}
+                      onChange={(e) => setExistingPublicNotes(e.target.value)}
+                      className="bg-zinc-950 border border-zinc-700 rounded px-2.5 py-1 text-xs text-zinc-100 outline-none focus:border-amber-500"
+                    />
+                    {isGm && (
+                      <div className="flex items-center gap-1">
+                        <EyeOff className="w-3 h-3 text-purple-400 shrink-0" />
+                        <input
+                          type="text"
+                          placeholder="Secret GM plot hook note..."
+                          value={existingPrivateNotes}
+                          onChange={(e) => setExistingPrivateNotes(e.target.value)}
+                          className="flex-1 bg-purple-950/40 border border-purple-800/60 rounded px-2 py-1 text-xs text-purple-200 outline-none focus:border-purple-500 font-mono"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setShowConnectModal(false)}
+                  className="px-3 py-1.5 text-xs rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+                >
+                  Cancel
+                </button>
+                {unlinkedNpcs.length > 0 && (
+                  <button
+                    type="submit"
+                    className="px-4 py-1.5 text-xs font-bold rounded bg-amber-500 hover:bg-amber-400 text-black shadow"
+                  >
+                    Connect Contact
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        )
       )}
     </div>
   );
