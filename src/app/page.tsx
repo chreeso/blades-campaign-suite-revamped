@@ -673,8 +673,10 @@ export default function Home() {
         {activeTab === 'factions' && (
           <FactionsTracker
             factions={factions}
+            clocks={clocks}
             isGm={isGm}
             onUpdateFaction={handleUpdateFaction}
+            onUpdateClock={handleUpdateClock}
             onCreateFaction={handleCreateFaction}
           />
         )}

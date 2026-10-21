@@ -3,6 +3,7 @@
 import React from 'react';
 import { Crew } from '@/types/blades';
 import { CREW_PLAYBOOKS } from '@/lib/constants/playbooks';
+import { ClaimsMap } from './ClaimsMap';
 import { Flame, ShieldAlert, Coins, Users, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface CrewSheetProps {
@@ -280,6 +281,13 @@ export function CrewSheet({ crew, isGm, onUpdateCrew }: CrewSheetProps) {
           </div>
         </div>
       </div>
+
+      {/* Crew Claims & Turf Map */}
+      <ClaimsMap
+        crew={crew}
+        isGm={isGm}
+        onUpdateCrew={onUpdateCrew}
+      />
     </div>
   );
 }

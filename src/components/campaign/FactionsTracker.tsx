@@ -1,14 +1,27 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Faction, HoldLevel } from '@/types/blades';
-import { Shield, Plus, ChevronUp, ChevronDown } from 'lucide-react';
+import { Faction, Clock, HoldLevel } from '@/types/blades';
+import { Shield, Plus, ChevronUp, ChevronDown, Dices, Play } from 'lucide-react';
 
 interface FactionsTrackerProps {
   factions: Faction[];
+  clocks?: Clock[];
   isGm: boolean;
   onUpdateFaction: (updated: Faction) => void;
+  onUpdateClock?: (updated: Clock) => void;
   onCreateFaction?: (faction: Omit<Faction, 'id' | 'created_at' | 'updated_at'>) => void;
+}
+
+interface FactionTurnLog {
+  factionId: string;
+  factionName: string;
+  tier: number;
+  dice: number[];
+  chosenDie: number;
+  ticks: number;
+  clockName?: string;
+  clockCompleted?: boolean;
 }
 
 const STATUS_LABELS: Record<number, { label: string; badge: string }> = {
@@ -23,11 +36,17 @@ const STATUS_LABELS: Record<number, { label: string; badge: string }> = {
 
 export function FactionsTracker({
   factions,
+  clocks = [],
   isGm,
   onUpdateFaction,
+  onUpdateClock,
   onCreateFaction
 }: FactionsTrackerProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showTurnModal, setShowTurnModal] = useState(false);
+  const [turnLogs, setTurnLogs] = useState<FactionTurnLog[]>([]);
+
+  // Create form state
   const [name, setName] = useState('');
   const [tier, setTier] = useState(2);
   const [hold, setHold] = useState<HoldLevel>('Strong');
@@ -60,23 +79,93 @@ export function FactionsTracker({
     setShowCreateModal(false);
   };
 
+  // GM Faction Turn Engine
+  const executeFactionTurn = () => {
+    const logs: FactionTurnLog[] = [];
+
+    factions.forEach((fac) => {
+      const isZero = fac.tier <= 0;
+      const count = isZero ? 2 : fac.tier;
+      const dice = Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
+
+      const sixes = dice.filter((d) => d === 6).length;
+      const isCritical = sixes >= 2;
+      const chosenDie = isZero ? Math.min(...dice) : Math.max(...dice);
+
+      let ticks = 0;
+      if (isCritical) {
+        ticks = 3;
+      } else if (chosenDie === 6) {
+        ticks = 2;
+      } else if (chosenDie >= 4) {
+        ticks = 1;
+      } else {
+        ticks = 0;
+      }
+
+      // Check for linked clock
+      let clockName: string | undefined;
+      let clockCompleted = false;
+
+      if (fac.clock_id && onUpdateClock) {
+        const linkedClock = clocks.find((c) => c.id === fac.clock_id);
+        if (linkedClock) {
+          clockName = linkedClock.name;
+          const nextSeg = Math.min(linkedClock.max_segments, linkedClock.current_segments + ticks);
+          clockCompleted = nextSeg >= linkedClock.max_segments;
+          onUpdateClock({
+            ...linkedClock,
+            current_segments: nextSeg,
+            updated_at: new Date().toISOString()
+          });
+        }
+      }
+
+      logs.push({
+        factionId: fac.id,
+        factionName: fac.name,
+        tier: fac.tier,
+        dice,
+        chosenDie,
+        ticks,
+        clockName,
+        clockCompleted
+      });
+    });
+
+    setTurnLogs(logs);
+    setShowTurnModal(true);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-amber-400" />
           <h3 className="font-serif text-lg font-bold text-zinc-100">Doskvol Factions & Status</h3>
         </div>
 
-        {isGm && onCreateFaction && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs transition-all shadow"
-          >
-            <Plus className="w-4 h-4" /> Add Faction
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {isGm && (
+            <button
+              onClick={executeFactionTurn}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/80 hover:bg-purple-900 border border-purple-600 text-purple-200 font-bold text-xs transition-all shadow"
+              title="Batch roll fortune rolls for all faction agendas"
+            >
+              <Play className="w-3.5 h-3.5 text-purple-400" /> Faction Turn Engine
+            </button>
+          )}
+
+          {isGm && onCreateFaction && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs transition-all shadow"
+            >
+              <Plus className="w-4 h-4" /> Add Faction
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Factions Table */}
@@ -140,6 +229,76 @@ export function FactionsTracker({
           );
         })}
       </div>
+
+      {/* GM Faction Turn Engine Results Modal */}
+      {showTurnModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-2xl bg-zinc-900 border border-purple-800 rounded-2xl p-6 shadow-2xl flex flex-col gap-4 text-zinc-100 max-h-[88vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Dices className="w-5 h-5 text-purple-400" />
+                <h3 className="font-serif text-lg font-bold text-purple-300">
+                  Faction Turn Engine Outcomes
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowTurnModal(false)}
+                className="text-xs text-zinc-400 hover:text-zinc-200 p-1 rounded"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-300">
+              Each active faction made a Fortune Roll using their Tier rating to advance their current agendas in Doskvol:
+            </p>
+
+            <div className="divide-y divide-zinc-800 bg-zinc-950 rounded-xl border border-zinc-800 overflow-hidden">
+              {turnLogs.map((log) => (
+                <div key={log.factionId} className="p-3 flex items-center justify-between text-xs gap-3">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-zinc-100">{log.factionName}</span>
+                    <span className="text-[11px] text-zinc-500 font-mono">
+                      Tier {log.tier} • Rolled [{log.dice.join(', ')}]
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`font-mono font-bold text-xs px-2.5 py-1 rounded border ${
+                        log.ticks === 3
+                          ? 'bg-amber-400 text-black border-amber-300'
+                          : log.ticks === 2
+                          ? 'bg-emerald-950 border-emerald-600 text-emerald-300'
+                          : log.ticks === 1
+                          ? 'bg-zinc-800 border-zinc-700 text-zinc-300'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-600'
+                      }`}
+                    >
+                      +{log.ticks} tick{log.ticks === 1 ? '' : 's'}
+                    </span>
+
+                    {log.clockName && (
+                      <span className="text-[11px] text-zinc-400 font-mono">
+                        Clock: {log.clockName} {log.clockCompleted && '✨ [COMPLETE]'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-zinc-800">
+              <button
+                onClick={() => setShowTurnModal(false)}
+                className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+              >
+                Accept Outcomes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Faction Modal */}
       {showCreateModal && (
