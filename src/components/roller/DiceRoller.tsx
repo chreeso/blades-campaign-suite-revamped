@@ -17,6 +17,7 @@ import {
   resolveResistanceRoll,
   resolveGroupActionRoll
 } from '@/lib/roller';
+import { playCritChime, playClockTickSound, playClockCompleteSound } from '@/lib/audio';
 import {
   Dices,
   Flame,
@@ -162,6 +163,9 @@ export function DiceRoller({
 
         const gRes = resolveGroupActionRoll(leaderData, membersData, position, effect);
         setGroupResult(gRes);
+        if (gRes.isCritical) {
+          playCritChime();
+        }
 
         // Apply leader stress
         if (gRes.leaderStressCost > 0) {
@@ -220,6 +224,9 @@ export function DiceRoller({
       }
 
       setResult(rollRes);
+      if (rollRes.isCritical) {
+        playCritChime();
+      }
       setIsRolling(false);
     }, 250);
   };
@@ -241,9 +248,16 @@ export function DiceRoller({
     const targetClock = clocks.find((c) => c.id === selectedClockId);
     if (!targetClock) return;
 
+    const newSegments = Math.min(targetClock.max_segments, targetClock.current_segments + ticksToApply);
+    if (newSegments >= targetClock.max_segments) {
+      playClockCompleteSound();
+    } else {
+      playClockTickSound();
+    }
+
     onUpdateClock({
       ...targetClock,
-      current_segments: Math.min(targetClock.max_segments, targetClock.current_segments + ticksToApply),
+      current_segments: newSegments,
       updated_at: new Date().toISOString()
     });
   };

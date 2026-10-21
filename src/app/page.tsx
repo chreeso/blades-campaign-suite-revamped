@@ -36,6 +36,10 @@ import { EngagementRollModal } from '@/components/roller/EngagementRollModal';
 import { DowntimeWizard } from '@/components/downtime/DowntimeWizard';
 import { EndOfSessionModal } from '@/components/campaign/EndOfSessionModal';
 import { IncarcerationModal } from '@/components/campaign/IncarcerationModal';
+import { ScoreGeneratorModal } from '@/components/campaign/ScoreGeneratorModal';
+import { DoskvolMap } from '@/components/campaign/DoskvolMap';
+import { ScoreOracle } from '@/lib/constants/oracles';
+import { playClockTickSound, playClockCompleteSound, isAudioMuted, toggleAudioMute } from '@/lib/audio';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { CampaignInviteModal } from '@/components/campaign/CampaignInviteModal';
 import { useCampaignSync } from '@/lib/supabase/useCampaignSync';
@@ -54,7 +58,11 @@ import {
   UserCheck,
   Swords,
   Lock,
-  Award
+  Award,
+  Map,
+  Volume2,
+  VolumeX,
+  Sparkles
 } from 'lucide-react';
 
 // Baseline initial data
@@ -410,7 +418,7 @@ export default function Home() {
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(INITIAL_JOURNAL);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
 
-  const [activeTab, setActiveTab] = useState<'character' | 'crew' | 'clocks' | 'factions' | 'npcs' | 'journal'>('character');
+  const [activeTab, setActiveTab] = useState<'character' | 'crew' | 'clocks' | 'factions' | 'npcs' | 'journal' | 'map'>('character');
 
   // Dice Roller State
   const [showDiceRoller, setShowDiceRoller] = useState(false);
@@ -430,6 +438,10 @@ export default function Home() {
   const [showEndOfSession, setShowEndOfSession] = useState(false);
   const [showIncarceration, setShowIncarceration] = useState(false);
   const [activeSetupBonus, setActiveSetupBonus] = useState<SetupBonus | null>(null);
+
+  // Score Generator State & Audio
+  const [showScoreGenerator, setShowScoreGenerator] = useState(false);
+  const [muted, setMuted] = useState(false);
 
   // Auth & Invite Modals State
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -682,7 +694,15 @@ export default function Home() {
 
   // Clocks
   const handleUpdateClock = (updated: Clock) => {
-    setClocks((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    const prev = clocks.find((c) => c.id === updated.id);
+    if (prev && updated.current_segments > prev.current_segments) {
+      if (updated.current_segments >= updated.max_segments) {
+        playClockCompleteSound();
+      } else {
+        playClockTickSound();
+      }
+    }
+    setClocks((prevList) => prevList.map((c) => (c.id === updated.id ? updated : c)));
     broadcastChange('clock_update', updated);
   };
 
@@ -700,6 +720,30 @@ export default function Home() {
     };
     setClocks((prev) => [...prev, newClock]);
     broadcastChange('clock_update', newClock);
+  };
+
+  // Score Oracle Handlers
+  const handleLaunchPlanFromOracle = (score: ScoreOracle) => {
+    setRollerInitialNarrative(
+      `Job Objective: "${score.work}" targeting ${score.target} in ${score.location}. Entangled with ${score.connectedFaction}. Twist: ${score.twist}`
+    );
+    setShowEngagementModal(true);
+  };
+
+  const handleLogScoreFromOracle = (score: ScoreOracle) => {
+    const newEntry: JournalEntry = {
+      id: `jrn_job_${Date.now()}`,
+      campaign_id: activeCampaignId,
+      author_id: 'current_user',
+      title: `Job Dossier: ${score.work}`,
+      content: `## Target: ${score.target}\n**Client**: ${score.client}\n**Location**: ${score.location}\n**Entangled Faction**: ${score.connectedFaction}\n**Stakes**: ${score.rewardTier}\n\n### Complication / Twist:\n*${score.twist}*`,
+      entry_type: 'score_log',
+      visibility: 'campaign_public',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setJournalEntries((prev) => [newEntry, ...prev]);
+    broadcastChange('journal_update', newEntry);
   };
 
   // Factions
@@ -894,6 +938,15 @@ ${result.narrative}
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Procedural Job Oracles Generator */}
+            <button
+              onClick={() => setShowScoreGenerator(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/80 border border-purple-600/70 hover:bg-purple-900/80 text-xs text-purple-200 font-bold transition-all shadow-xs hover:scale-105"
+              title="Generate a procedural Doskvol job, client, target, and complication"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" /> Job Oracles
+            </button>
+
             {/* Score Plan / Engagement Roll Button */}
             <button
               onClick={() => setShowEngagementModal(true)}
@@ -901,6 +954,18 @@ ${result.narrative}
               title="Launch the Engagement Roll to establish operation plan and starting position"
             >
               <Swords className="w-3.5 h-3.5 text-red-400" /> Plan Score
+            </button>
+
+            {/* Audio Ambient Mute Toggle */}
+            <button
+              onClick={() => {
+                const nextMuted = toggleAudioMute();
+                setMuted(nextMuted);
+              }}
+              className="p-2 rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500 transition-all"
+              title={muted ? 'Enable Victorian Atmospheric Sounds' : 'Mute Atmospheric Audio Cues'}
+            >
+              {muted ? <VolumeX className="w-3.5 h-3.5 text-red-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
             </button>
 
             {/* Quick Add NPC Button */}
@@ -1012,6 +1077,16 @@ ${result.narrative}
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" /> Journal & Ledger
+            </button>
+            <button
+              onClick={() => setActiveTab('map')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all ${
+                activeTab === 'map'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <Map className="w-3.5 h-3.5" /> Doskvol Map
             </button>
           </nav>
 
@@ -1138,6 +1213,14 @@ ${result.narrative}
             onAddTransaction={handleAddTransaction}
           />
         )}
+
+        {activeTab === 'map' && (
+          <DoskvolMap
+            crew={crew}
+            factions={factions}
+            isGm={isGm}
+          />
+        )}
       </main>
 
       {/* Floating Dice Roll Button */}
@@ -1218,6 +1301,16 @@ ${result.narrative}
           characters={characters}
           onCommitIncarceration={handleCommitIncarceration}
           onClose={() => setShowIncarceration(false)}
+        />
+      )}
+
+      {/* Procedural Doskvol Job / Score Generator Modal */}
+      {showScoreGenerator && (
+        <ScoreGeneratorModal
+          factions={factions}
+          onLaunchPlan={handleLaunchPlanFromOracle}
+          onLogScore={handleLogScoreFromOracle}
+          onClose={() => setShowScoreGenerator(false)}
         />
       )}
 

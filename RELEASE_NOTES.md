@@ -6,6 +6,34 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.8.0] — 2026-10-21
+
+### 🗺️ Procedural Job Oracles, Interactive Doskvol Cartography & Atmospheric Audio
+
+This major release completes **Phase 4** of the Blades SRD roadmap, introducing deep immersion tools for GMs and players alike: procedural underworld job generation, vector district cartography with turf overlays, and Web Audio API synthesized cues.
+
+#### 🌟 Key Improvements
+
+* **Procedural Doskvol Job / Score Generator (`ScoreGeneratorModal.tsx`, `oracles.ts`)**:
+  * Faithful implementation of the canonical *Blades in the Dark* Job Generator tables (RAW p. 306–307).
+  * Generates **Client**, **Target**, **Work Objective**, **Unexpected Twist**, **District Location**, and **Entangled Faction** with estimated Coin and Heat stakes.
+  * Individual reroll buttons per parameter to craft tailored opportunities.
+  * One-click "Plan Score with this Job" directly pre-filling the Engagement Roll modal, and "Save to Journal Dossier" exporting into the campaign ledger.
+
+* **Interactive Doskvol District & Turf Territory Map (`DoskvolMap.tsx`)**:
+  * Vector SVG map featuring the 12 canonical districts (*Crow's Foot, The Docks, Silkshore, Charterhall, Brightstone, Six Towers, Coalridge, Nightmarket, Whitecrown, Dunslough, Barrowcleft, Ironhook Prison*), the lightning barrier perimeter, and the River Sheaf.
+  * Real-time territory markers for **Crew Lair**, **Hunting Grounds**, and **Faction Strongholds**.
+  * Dynamic District Dossier drawer detailing district wealth tier, atmospheric mood quote, and live campaign faction status ratings.
+
+* **Atmospheric Procedural Audio Cues (`audio.ts`)**:
+  * Zero-dependency Web Audio API synthesizers producing atmospheric soundscapes.
+  * **Clock Ticks & Bells**: Crisp mechanical ratchet on segment fill; resonant bronze bell chime on clock completion.
+  * **Critical Harmonic Chime**: Ascending harmonic chord (C5-E5-G5-C6) upon rolling critical successes in action, resistance, or group rolls.
+  * **Trauma Gong**: Ominous low sub-bass iron reverberation on trauma conditions.
+  * Header-level ambient sound toggle persisted across sessions via `localStorage`.
+
+---
+
 ## [0.7.0] — 2026-10-21
 
 ### 🤝 Teamwork Maneuvers, End-of-Session XP Cadence & Ironhook Prison Engine
