@@ -78,6 +78,7 @@ const INITIAL_CREW: Crew = {
   name: 'The Obsidian Veil',
   playbook: 'Shadows',
   rep: 4,
+  xp: 2,
   tier: 1,
   hold: 'Strong',
   heat: 3,
@@ -91,6 +92,20 @@ const INITIAL_CREW: Crew = {
   ],
   upgrades: ['Lair Security', 'Fine Shadow Cloaks'],
   claims: ['Turf (Crow’s Foot canal junction)'],
+  cohorts: [
+    {
+      id: 'coh_skulks',
+      name: 'The Night Skulks',
+      kind: 'gang',
+      description: 'Street urchins and pickpockets who keep watch and slip through grates.',
+      quality: 1,
+      scale: 1,
+      edges: ['Fearsome', 'Loyal'],
+      flaws: ['Unreliable'],
+      harm: 'healthy',
+      armor_used: false
+    }
+  ],
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString()
 };

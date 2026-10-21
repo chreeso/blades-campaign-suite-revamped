@@ -17,9 +17,9 @@
 | **Engagement Roll** | Formal pre-score fortune roll (1d luck base + plan detail, target vulnerability, contacts, tier differences) determining initial position. | Fully modeled in [`EngagementRollModal.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/roller/EngagementRollModal.tsx) and [`roller.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/roller.ts). | **Compliant** |
 | **Recovery & Healing Clock** | 4-segment Healing clock on PC sheet. Downtime Recovery rolls Healer Quality/Tinker. When filled, all harm drops 1 level. | Modeled in [`HarmMatrix.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/ui/HarmMatrix.tsx), [`DowntimeWizard.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/downtime/DowntimeWizard.tsx), and [`downtime.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/downtime.ts). | **Compliant** |
 | **Downtime Activities** | 6 canonical activities: *Vice, Reduce Heat, Train, Recover, Acquire Asset, Long-Term Project*. 2 free (or 1 at War); extras cost 1 Coin/Rep. | Fully implemented in [`DowntimeWizard.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/downtime/DowntimeWizard.tsx) and [`downtime.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/downtime.ts). | **Compliant** |
-| **Crew XP & Advancements** | 8-box Crew XP track with playbook triggers. Marks unlock Crew Special Abilities or 2 Upgrades. | [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx) tracks Rep, Tier, and Hold, but **Crew XP is completely absent**. | **Missing (Phase 2)** |
-| **Crew Special Abilities** | Each Crew playbook has unique special abilities that can be taken at advancement. | Abilities exist in constants, but **no interactive selector or activation UI** exists on the Crew sheet. | **Missing (Phase 2)** |
-| **Cohorts (Gangs & Experts)** | Crews recruit Gangs or Experts with Quality (Tier), Scale, Edges (Fearsome, Loyal), Flaws (Savage, Unreliable), and Cohort Harm. | **Missing.** No Cohort models or UI exist in [`blades.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/types/blades.ts) or [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx). | **Missing (Phase 2)** |
+| **Crew XP & Advancements** | 8-box Crew XP track with playbook triggers. Marks unlock Crew Special Abilities or 2 Upgrades. | Fully implemented in [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx) with advancement triggers. | **Compliant** |
+| **Crew Special Abilities** | Each Crew playbook has unique special abilities that can be taken at advancement. | Modeled in [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx) and [`playbooks.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/constants/playbooks.ts). | **Compliant** |
+| **Cohorts (Gangs & Experts)** | Crews recruit Gangs or Experts with Quality (Tier), Scale, Edges (Fearsome, Loyal), Flaws (Savage, Unreliable), and Cohort Harm. | Modeled in [`CohortCard.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CohortCard.tsx) and [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx). | **Compliant** |
 | **Teamwork Maneuvers** | 4 maneuvers: Assist (+1d / 1 stress), Lead Group Action (leader takes 1 stress per fail), Protect Teammate, Set Up (+1 effect/position). | Assist is an unlinked checkbox; Group Action, Protect, and Set Up have no tracking or sheet sync. | **Lacking (Phase 3)** |
 | **End of Session XP** | Review 3 prompts (playbook trigger, beliefs/heritage, vice/trauma struggle) to award 1–2 XP each. | Scoundrel sheets track XP tracks, but lack the end-of-session prompt wizard. | **Lacking (Phase 3)** |
 | **Incarceration Roll** | When Wanted Level hits 4 or a PC is arrested to purge Heat, roll Incarceration for prison claims, faction standing, and sentence. | Currently Wanted level rolls over, but has no incarceration event trigger or Ironhook sub-mechanic. | **Missing (Phase 3)** |
@@ -123,28 +123,28 @@ flowchart TD
 ### Phase 2: Crew Advancements & Cohorts Engine
 *Goal: Turn the Crew Sheet into a full operational hub with cohorts and playbook progressions.*
 
-- [ ] **2.1 Crew XP Track & Playbook XP Triggers**
-  - [ ] Add `xp: number` (0 to 8) to `Crew` interface and Supabase schema.
-  - [ ] Render 8-segment linear Crew XP bar with advancement trigger checklist:
+- [x] **2.1 Crew XP Track & Playbook XP Triggers**
+  - [x] Add `xp: number` (0 to 8) to `Crew` interface and Supabase schema.
+  - [x] Render 8-segment linear Crew XP bar with advancement trigger checklist:
     - *Assassins*: Successful assassination, extortion, or dark operation.
     - *Bravos*: Successful robbery, extortion, or sabotage.
     - *Cult*: Consecrated ground, esoteric artifact, or sacrificial offering.
     - *Hawkers*: Contraband acquisition, new sales territory, or sales volume.
     - *Shadows*: Successful burglary, espionage, or robbery.
     - *Smugglers*: Successful smuggling operation or contraband route.
-  - [ ] Trigger advance modal when 8 XP is reached: choose 1 Crew Special Ability or 2 Crew Upgrades.
+  - [x] Trigger advance modal when 8 XP is reached: choose 1 Crew Special Ability or 2 Crew Upgrades.
 
-- [ ] **2.2 Crew Special Abilities Interactive Selector**
-  - [ ] Build interactive ability toggle matrix on [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx).
-  - [ ] Support playbook specific abilities + Veteran ability picks from other crew playbooks.
+- [x] **2.2 Crew Special Abilities Interactive Selector**
+  - [x] Build interactive ability toggle matrix on [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx).
+  - [x] Support playbook specific abilities + Veteran ability picks from other crew playbooks.
 
-- [ ] **2.3 Cohorts System (Gangs & Experts)**
-  - [ ] Define `Cohort` interface: `id`, `crew_id`, `name`, `kind: 'gang' | 'expert'`, `quality: number`, `scale: number`, `edges: string[]`, `flaws: string[]`, `harm: 'healthy' | 'impaired' | 'broken'`, `armor: boolean`.
-  - [ ] Create `CohortCard.tsx` in `src/components/campaign/`.
-  - [ ] Roll Cohort Quality rolls directly from the crew view.
+- [x] **2.3 Cohorts System (Gangs & Experts)**
+  - [x] Define `Cohort` interface: `id`, `crew_id`, `name`, `kind: 'gang' | 'expert'`, `quality: number`, `scale: number`, `edges: string[]`, `flaws: string[]`, `harm: 'healthy' | 'impaired' | 'broken'`, `armor: boolean`.
+  - [x] Create `CohortCard.tsx` in `src/components/campaign/`.
+  - [x] Roll Cohort Quality rolls directly from the crew view.
 
-- [ ] **2.4 Playbook-Specific Crew Upgrades**
-  - [ ] Expand upgrade matrix from generic list to playbook-specific items (e.g. Smugglers: Camouflage, Hidden Cargo; Bravos: Iron Gate, Barracks).
+- [x] **2.4 Playbook-Specific Crew Upgrades**
+  - [x] Expand upgrade matrix from generic list to playbook-specific items (e.g. Smugglers: Camouflage, Hidden Cargo; Bravos: Iron Gate, Barracks).
 
 ---
 

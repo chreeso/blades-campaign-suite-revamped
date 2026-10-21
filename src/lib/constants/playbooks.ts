@@ -256,11 +256,121 @@ export const STANDARD_ITEMS: { name: string; load: number; description: string }
   { name: 'Spiritbane Charm', load: 0, description: 'Alchemical chime that warns of ghosts' }
 ];
 
-export const CREW_PLAYBOOKS: Record<CrewPlaybook, { tagline: string; defaultHuntingGrounds: string }> = {
-  Assassins: { tagline: 'Killers for hire and contract hunters', defaultHuntingGrounds: 'High-profile assassinations & executions' },
-  Bravos: { tagline: 'Mercenaries, thugs, extortionists and street fighters', defaultHuntingGrounds: 'Extortion and armed robbery' },
-  Cult: { tagline: 'Devotees of a forgotten deity and arcane seekers', defaultHuntingGrounds: 'Sacred relic heists and ritual sacrifices' },
-  Hawkers: { tagline: 'Vice dealers and illegal contraband peddlers', defaultHuntingGrounds: 'Black market narcotics & vice distribution' },
-  Shadows: { tagline: 'Burglars, infiltrators, and industrial spies', defaultHuntingGrounds: 'Infiltration, burglary, and espionage' },
-  Smugglers: { tagline: 'Contraband couriers across barriers and deathlands', defaultHuntingGrounds: 'Contraband logistics and blockade running' }
+export interface CrewPlaybookData {
+  tagline: string;
+  defaultHuntingGrounds: string;
+  xpTrigger: string;
+  specialAbilities: { name: string; description: string }[];
+  uniqueUpgrades: { id: string; name: string; desc: string }[];
+}
+
+export const CREW_PLAYBOOKS: Record<CrewPlaybook, CrewPlaybookData> = {
+  Assassins: {
+    tagline: 'Killers for hire and contract hunters',
+    defaultHuntingGrounds: 'High-profile assassinations & executions',
+    xpTrigger: 'Execute a successful assassination, extortion, or dark operation.',
+    specialAbilities: [
+      { name: 'Deadly', description: 'Each PC gains +1 action dot in Prowl or Finesse.' },
+      { name: "Crow's Veil", description: "Due to dark rituals or subtle tradecraft, Spirit Wardens' death bells do not ring when your victims die." },
+      { name: 'Emberdeath', description: 'You know how to dispose of corpses so their ghosts never rise.' },
+      { name: 'Predator', description: 'When you take action against a target with higher Tier, take +1d to the engagement roll.' },
+      { name: "Viper's Venom", description: "When you use poison, choose one: it's invisible/odorless, or acts instantly, or is undetectable by mundane means." },
+      { name: 'Ironhook Contacts', description: 'Your crew gains +1 Tier for incarceration rolls and prison turf.' }
+    ],
+    uniqueUpgrades: [
+      { id: 'Assassin Rig', name: 'Assassin Rig', desc: 'Carried poison, garrotes, and concealed blades count as 0 load.' },
+      { id: 'Iron Lair', name: 'Iron Lair', desc: 'Your lair is armored and sealed against entry with blast doors and iron bars.' },
+      { id: 'Covert Drop', name: 'Covert Drop', desc: 'Secret caches throughout Doskvol to stash weapons or contraband.' }
+    ]
+  },
+  Bravos: {
+    tagline: 'Mercenaries, thugs, extortionists and street fighters',
+    defaultHuntingGrounds: 'Extortion and armed robbery',
+    xpTrigger: 'Execute a successful robbery, extortion, or sabotage.',
+    specialAbilities: [
+      { name: 'Dangerous', description: 'Each PC gains +1 action dot in Skirmish or Command.' },
+      { name: 'Blood Brothers', description: 'When you fight alongside a cohort or crewmate, gain +1 effect.' },
+      { name: 'Door Kickers', description: 'When you execute an assault, take +1d to the engagement roll.' },
+      { name: 'Fiends', description: 'Crew members take -1 stress when resisting physical harm or panic.' },
+      { name: 'Forged in the Fire', description: 'Each PC gains +1 resistance dot in Prowess or Resolve.' },
+      { name: 'War Dogs', description: 'When you are at war (-3 faction status), mark +1 rep for each successful score.' }
+    ],
+    uniqueUpgrades: [
+      { id: 'Iron Gate', name: 'Iron Gate', desc: 'Heavy portcullis protecting your lair entrance.' },
+      { id: 'Barracks', name: 'Barracks', desc: 'Quarters and armory providing bunking for up to two full cohorts.' },
+      { id: 'Fine Weapons', name: 'Fine Weapons', desc: 'Quality melee weapons and firearms for all crew members.' }
+    ]
+  },
+  Cult: {
+    tagline: 'Devotees of a forgotten deity and arcane seekers',
+    defaultHuntingGrounds: 'Sacred relic heists and ritual sacrifices',
+    xpTrigger: 'Acquire consecrated ground, acquire esoteric artifacts, or secure sacrificial offerings.',
+    specialAbilities: [
+      { name: 'Chosen', description: 'Each PC gains +1 action dot in Attune or Study.' },
+      { name: 'Anointed', description: 'You gain +1d to resistance rolls against supernatural or mental trauma.' },
+      { name: 'Bound in Darkness', description: 'You may call upon your deity to conceal operations; take +1d to engagement rolls for occult scores.' },
+      { name: 'Conviction', description: 'Each PC gains +1 stress box (maximum 10 stress).' },
+      { name: 'Glory Incarnate', description: 'When your deity is pleased, all cohort gang members become terrifyingly empowered (+1 scale).' },
+      { name: 'Sealed in Blood', description: 'You may sacrifice a living human to clear 3 Heat or gain 2 Rep during downtime.' }
+    ],
+    uniqueUpgrades: [
+      { id: 'Consecrated Ground', name: 'Consecrated Ground', desc: 'Sanctified temple inner sanctum where hostile spirits cannot enter.' },
+      { id: 'Occult Library', name: 'Occult Library', desc: 'Rare grimoires and texts providing +1d to Study or Attune during downtime projects.' },
+      { id: 'Ritual Sanctum', name: 'Ritual Sanctum', desc: 'Specialized altar room wired with electroplasmic capacitors.' }
+    ]
+  },
+  Hawkers: {
+    tagline: 'Vice dealers and illegal contraband peddlers',
+    defaultHuntingGrounds: 'Black market narcotics & vice distribution',
+    xpTrigger: 'Acquire new contraband, secure a new sale territory, or increase sale volume.',
+    specialAbilities: [
+      { name: 'Silver Tongues', description: 'Each PC gains +1 action dot in Consort or Sway.' },
+      { name: 'Accord', description: 'You have a standing treaty with another faction; gain +1 status and immunity to their retaliation while intact.' },
+      { name: 'Ghost Market', description: 'You can sell contraband to ghosts and esoteric entities for arcane coin or favors.' },
+      { name: 'High Society', description: 'Take +1d to engagement rolls for social scores in wealthy districts.' },
+      { name: 'The Good Stuff', description: 'Your product is legendary; gain +2 Coin payoff whenever you sell contraband in bulk.' },
+      { name: 'Hooked', description: 'A powerful city official or noble is addicted to your product; they provide advance Bluecoat warnings.' }
+    ],
+    uniqueUpgrades: [
+      { id: 'Contraband Stash', name: 'Contraband Stash', desc: 'Hidden vaults in your lair immune to standard Bluecoat search warrants.' },
+      { id: 'Luxury Suite', name: 'Luxury Suite', desc: 'Opulent private lounge for entertaining wealthy clients (+1d to Consort).' },
+      { id: 'Secure Storefront', name: 'Secure Storefront', desc: 'Legitimate business front providing covers and money laundering.' }
+    ]
+  },
+  Shadows: {
+    tagline: 'Burglars, infiltrators, and industrial spies',
+    defaultHuntingGrounds: 'Infiltration, burglary, and espionage',
+    xpTrigger: 'Execute a successful burglary, espionage, or robbery.',
+    specialAbilities: [
+      { name: 'Everyone Steals', description: 'Each PC gains +1 action dot in Prowl or Finesse.' },
+      { name: 'Ghost Echoes', description: 'You can use ghosts and spirit echoes as covert scouts or couriers.' },
+      { name: 'Pack Rats', description: 'Your lair has a secret trove of supplies; scoundrels can retroactively produce mundane items during flashbacks for 0 stress.' },
+      { name: 'Patron', description: 'When your patron contacts you with a job, take +1d to engagement rolls and +2 Coin payoff.' },
+      { name: 'Slippery', description: 'When you roll for entanglements, take -1 Wanted level for determining the table bracket.' },
+      { name: 'Synchronized', description: 'When you lead a group action, you can spend 1 stress to count any multiple 6s as a critical.' }
+    ],
+    uniqueUpgrades: [
+      { id: 'Thief Rig', name: 'Thief Rig', desc: 'Lockpicks, climbing harnesses, and glass cutters count as 0 load.' },
+      { id: 'Hidden Lair', name: 'Hidden Lair', desc: 'Your lair entrance is disguised behind secret panels or sewer waterfalls.' },
+      { id: 'Camouflage', name: 'Camouflage', desc: 'Camouflage netting and shadows cloaks tailored to blend invisibly with Doskvol canals.' }
+    ]
+  },
+  Smugglers: {
+    tagline: 'Contraband couriers across barriers and deathlands',
+    defaultHuntingGrounds: 'Contraband logistics and blockade running',
+    xpTrigger: 'Execute a successful smuggling operation or secure new contraband routes.',
+    specialAbilities: [
+      { name: 'Like Part of the Family', description: 'Create one cohort for free; they are loyal to the death (+1 Quality).' },
+      { name: 'Allbound', description: 'Your vehicles can travel on water, rails, or through spirit-infested Deathlands.' },
+      { name: 'Ghost Passage', description: 'You have an occult charm allowing your vessel to pass through lightning barriers without harm.' },
+      { name: 'Just Passing Through', description: 'When you roll entanglements, you may choose to take +2 heat instead of rolling.' },
+      { name: 'Leverage', description: 'When you negotiate with transport authorities or harbor masters, take +1d to Sway.' },
+      { name: 'Reavers', description: 'When you fight aboard a vehicle or vessel, all crew members gain +1 effect.' }
+    ],
+    uniqueUpgrades: [
+      { id: 'Smuggler Rig', name: "Smuggler's Rig", desc: 'Waterproof drybags, buoyancy vests, and hidden pockets count as 0 load.' },
+      { id: 'Hidden Cargo', name: 'Hidden Cargo', desc: 'Concealed false bottoms and bulkheads in all vehicles.' },
+      { id: 'Smuggler Vehicle', name: 'Smuggler Vehicle', desc: 'A reinforced steam launch, muffled canal cutter, or armored carriage.' }
+    ]
+  }
 };

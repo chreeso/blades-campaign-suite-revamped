@@ -270,12 +270,29 @@ export interface Transaction {
   created_at: string;
 }
 
+export type CohortKind = 'gang' | 'expert';
+export type CohortHarm = 'healthy' | 'impaired' | 'broken';
+
+export interface Cohort {
+  id: string;
+  name: string;
+  kind: CohortKind;
+  description?: string;
+  quality: number; // Tier rating
+  scale: number; // Gang scale (0=1-2, 1=3-6, 2=10-12, etc.)
+  edges: string[]; // Fearsome, Independent, Loyal, Tenacious
+  flaws: string[]; // Principled, Savage, Unreliable, Wild
+  harm: CohortHarm;
+  armor_used: boolean;
+}
+
 export interface Crew {
   id: string;
   campaign_id: string;
   name: string;
   playbook: CrewPlaybook;
   rep: number; // 0 to 12
+  xp: number; // 0 to 8 (Crew advancement track)
   tier: number; // 0 to 5
   hold: HoldLevel;
   heat: number; // 0 to 9
@@ -287,6 +304,7 @@ export interface Crew {
   special_abilities: SpecialAbility[];
   upgrades: string[];
   claims: string[];
+  cohorts?: Cohort[];
   created_at: string;
   updated_at: string;
 }
