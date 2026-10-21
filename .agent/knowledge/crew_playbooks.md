@@ -79,6 +79,11 @@ This document specifies the data model and mechanics for Crew sheets, claims, up
   - **Strong Hold**: Resilient status; can advance Tier by paying Coin and spending required Rep.
 * **Tier Cost**: Advancing from Tier `N` to `N+1` costs `(Next Tier × 8) - Turf` Coin (or as specified by hold state).
 
+### Crew Upgrades: Advancement & Training
+* **Mastery**: Your scoundrels can advance action ratings to **4 dots** (standard advancement is capped at 3 dots).
+* **Training Upgrades** (Insight, Prowess, Resolve, Personal):
+  - When a scoundrel performs the **Train** downtime activity for an attribute with a matching crew upgrade, they mark **2 XP** instead of 1.
+
 ### Crew Vault & Coin
 * Baseline crew vault holds **4 Coin**.
 * Upgrade 1: Vault expansion to **8 Coin**.
