@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { Character, ActionName, AttributeName, LoadCategory, NPC, Faction, CharacterNpcRelation, CampaignRelationshipLabel } from '@/types/blades';
+import { SYSTEM_RELATIONSHIP_BADGES } from '@/lib/constants/playbooks';
 import { DotRating } from '@/components/ui/DotRating';
 import { StressBar } from '@/components/ui/StressBar';
 import { HarmMatrix } from '@/components/ui/HarmMatrix';
-import { Coins, Sparkles, Backpack, Award, ArrowRight, ArrowLeft, Dices, ShieldCheck, Users, Shield, Plus, Tag, EyeOff } from 'lucide-react';
+import { Coins, Sparkles, Backpack, Award, ArrowRight, ArrowLeft, Dices, ShieldCheck, Users, Shield, Plus, Tag, EyeOff, Check } from 'lucide-react';
 
 interface CharacterSheetProps {
   character: Character;
@@ -61,6 +62,9 @@ export function CharacterSheet({
   isGm = false
 }: CharacterSheetProps) {
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+  const [managingBadgesRelId, setManagingBadgesRelId] = useState<string | null>(null);
+  const [newLabelName, setNewLabelName] = useState('');
+  const [newLabelColor, setNewLabelColor] = useState('amber');
 
   const romanTier = (tier: number) => ['0', 'I', 'II', 'III', 'IV', 'V', 'VI'][tier] || tier;
 
@@ -70,6 +74,36 @@ export function CharacterSheet({
     if (score <= 60) return { label: 'Neutral', color: 'text-zinc-400 bg-zinc-900 border-zinc-700', icon: '●' };
     if (score <= 80) return { label: 'Ally', color: 'text-amber-400 bg-amber-950/60 border-amber-800', icon: '▲' };
     return { label: 'Devoted Friend', color: 'text-yellow-300 bg-yellow-950/60 border-yellow-600', icon: '▲' };
+  };
+
+  const toggleBadge = (rel: CharacterNpcRelation, badgeName: string) => {
+    if (!onUpdateRelation) return;
+    const exists = rel.badges.includes(badgeName);
+    const updatedBadges = exists
+      ? rel.badges.filter((b) => b !== badgeName)
+      : [...rel.badges, badgeName];
+
+    onUpdateRelation({
+      ...rel,
+      badges: updatedBadges,
+      updated_at: new Date().toISOString()
+    });
+  };
+
+  const handleAddNewLabelAndAssign = (rel: CharacterNpcRelation) => {
+    if (!newLabelName.trim()) return;
+    const trimmed = newLabelName.trim();
+    if (onCreateCampaignLabel) {
+      onCreateCampaignLabel(trimmed, newLabelColor);
+    }
+    if (onUpdateRelation && !rel.badges.includes(trimmed)) {
+      onUpdateRelation({
+        ...rel,
+        badges: [...rel.badges, trimmed],
+        updated_at: new Date().toISOString()
+      });
+    }
+    setNewLabelName('');
   };
 
   // Update handlers
@@ -657,12 +691,181 @@ export function CharacterSheet({
                       </div>
                     )}
                   </div>
+
+                  {/* Badges Display & Manage Button */}
+                  <div className="flex items-center justify-between gap-1 flex-wrap pt-2 border-t border-zinc-900 mt-0.5">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {rel.badges.length === 0 ? (
+                        <span className="text-[10px] text-zinc-600 italic">No badges assigned</span>
+                      ) : (
+                        rel.badges.map((b) => (
+                          <span
+                            key={b}
+                            className="px-1.5 py-0.5 rounded text-[10px] bg-zinc-800 text-amber-300 border border-zinc-700 flex items-center gap-1"
+                          >
+                            <Tag className="w-2.5 h-2.5 text-amber-400" />
+                            {b}
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        onClick={() => setManagingBadgesRelId(rel.id)}
+                        className="text-[10px] px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3 text-amber-400" /> Badges ({rel.badges.length})
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Badge Management Modal */}
+      {managingBadgesRelId && (() => {
+        const activeRel = relations.find((r) => r.id === managingBadgesRelId);
+        if (!activeRel) return null;
+        const activeNpc = npcs.find((n) => n.id === activeRel.npc_id);
+
+        return (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <div className="w-full max-w-lg bg-zinc-900 border border-zinc-700 rounded-xl p-5 shadow-2xl flex flex-col gap-4 text-zinc-100 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-amber-400" />
+                  <h3 className="font-serif text-sm font-bold text-amber-400">
+                    Relationship Badges • {activeNpc?.name || 'Contact'}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setManagingBadgesRelId(null)}
+                  className="text-xs text-zinc-400 hover:text-zinc-200"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* System Badges */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] uppercase font-bold tracking-wider text-zinc-400">
+                  Systemwide Relationship Badges
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {SYSTEM_RELATIONSHIP_BADGES.map((b) => {
+                    const isSelected = activeRel.badges.includes(b.name);
+
+                    return (
+                      <button
+                        key={b.name}
+                        type="button"
+                        onClick={() => toggleBadge(activeRel, b.name)}
+                        className={`p-2 rounded-lg border text-left flex flex-col gap-0.5 transition-all ${
+                          isSelected
+                            ? 'bg-amber-950/40 border-amber-500 text-amber-200 shadow-xs'
+                            : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-zinc-200">{b.name}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                        </div>
+                        <span className="text-[10px] text-zinc-500 leading-snug">{b.description}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Campaign Exclusive Labels */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-zinc-800">
+                <span className="text-[11px] uppercase font-bold tracking-wider text-zinc-400">
+                  Campaign-Exclusive Labels
+                </span>
+
+                {campaignLabels.length === 0 ? (
+                  <p className="text-xs text-zinc-500 italic">
+                    No custom campaign labels defined yet. Create one below!
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {campaignLabels.map((l) => {
+                      const isSelected = activeRel.badges.includes(l.name);
+
+                      return (
+                        <button
+                          key={l.id}
+                          type="button"
+                          onClick={() => toggleBadge(activeRel, l.name)}
+                          className={`p-2 rounded-lg border text-left flex items-center justify-between transition-all ${
+                            isSelected
+                              ? 'bg-emerald-950/40 border-emerald-500 text-emerald-200 shadow-xs'
+                              : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                          }`}
+                        >
+                          <span className="font-semibold text-xs text-zinc-200">{l.name}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Create New Campaign Label Form */}
+                <div className="mt-2 p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 flex flex-col gap-2">
+                  <span className="text-xs font-bold text-zinc-300">Create New Campaign Label</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Label name (e.g. Smuggling Partner, Blood Oath)..."
+                      value={newLabelName}
+                      onChange={(e) => setNewLabelName(e.target.value)}
+                      className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-2.5 py-1 text-xs text-zinc-100 outline-none focus:border-amber-500"
+                    />
+                    <select
+                      value={newLabelColor}
+                      onChange={(e) => setNewLabelColor(e.target.value)}
+                      className="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-300 outline-none"
+                    >
+                      <option value="amber">Amber</option>
+                      <option value="emerald">Emerald</option>
+                      <option value="rose">Rose</option>
+                      <option value="purple">Purple</option>
+                      <option value="cyan">Cyan</option>
+                      <option value="blue">Blue</option>
+                      <option value="pink">Pink</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleAddNewLabelAndAssign(activeRel)}
+                      disabled={!newLabelName.trim()}
+                      className="px-3 py-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black font-semibold text-xs rounded shadow"
+                    >
+                      Add & Assign
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setManagingBadgesRelId(null)}
+                  className="px-4 py-1.5 text-xs font-semibold rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Level-Up Modal */}
       {showLevelUpModal && (
