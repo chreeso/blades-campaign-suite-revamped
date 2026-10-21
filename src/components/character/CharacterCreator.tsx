@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Character, ScoundrelPlaybook, ActionName, SpecialAbility, InventoryItem } from '@/types/blades';
 import { SCOUNDREL_PLAYBOOKS, STANDARD_ITEMS, PlaybookContact } from '@/lib/constants/playbooks';
-import { UserPlus, Sparkles, Check, Users, Plus, AlertCircle } from 'lucide-react';
+import { UserPlus, Sparkles, Check, Users, Plus, Minus, AlertCircle } from 'lucide-react';
 
 export interface CharacterContactSelection {
   friend: PlaybookContact;
@@ -21,6 +21,12 @@ const HERITAGES = ['Akoros', 'Skovlan', 'Iruvia', 'Severos', 'The Dagger Isles',
 const BACKGROUNDS = ['Academic', 'Labor', 'Law', 'Trade', 'Military', 'Noble', 'Underworld'];
 const VICES = ['Faith', 'Gambler', 'Luxury', 'Obligation', 'Pleasure', 'Stupor', 'Weird'];
 
+const ATTRIBUTE_GROUPS: { label: string; actions: ActionName[] }[] = [
+  { label: 'Insight', actions: ['hunt', 'study', 'survey', 'tinker'] },
+  { label: 'Prowess', actions: ['finesse', 'prowl', 'skirmish', 'wreck'] },
+  { label: 'Resolve', actions: ['attune', 'command', 'consort', 'sway'] }
+];
+
 export function CharacterCreator({
   campaignId,
   onCharacterCreated,
@@ -34,6 +40,11 @@ export function CharacterCreator({
   const [vice, setVice] = useState('Pleasure');
   const [vicePurveyor, setVicePurveyor] = useState('');
   const [selectedAbilityIndex, setSelectedAbilityIndex] = useState(0);
+
+  // Starting Action Dots Allocation (SRD: 2 Playbook Dots + 2 General Dots, max 2 per action)
+  const [allocatedPlaybookDots, setAllocatedPlaybookDots] = useState<Partial<Record<ActionName, number>>>({});
+  const [allocatedGeneralDots, setAllocatedGeneralDots] = useState<Partial<Record<ActionName, number>>>({});
+  const [dotsError, setDotsError] = useState<string | null>(null);
 
   // Playbook Contacts: 1 Friend and 1 Foe strictly required by Blades in the Dark rules
   const [friendName, setFriendName] = useState<string | null>(null);
@@ -54,6 +65,73 @@ export function CharacterCreator({
     setFriendName(null);
     setFoeName(null);
     setContactError(null);
+    setAllocatedPlaybookDots({});
+    setAllocatedGeneralDots({});
+    setDotsError(null);
+  };
+
+  const playbookActionKeys = Object.keys(playbookData.defaultActions) as ActionName[];
+  const totalPlaybookDotsUsed = Object.values(allocatedPlaybookDots).reduce<number>((acc, v) => acc + (v || 0), 0);
+  const totalGeneralDotsUsed = Object.values(allocatedGeneralDots).reduce<number>((acc, v) => acc + (v || 0), 0);
+
+  const getActionCurrentDots = (action: ActionName): number => {
+    const base = playbookData.defaultActions[action] || 0;
+    const pbDot = allocatedPlaybookDots[action] || 0;
+    const genDot = allocatedGeneralDots[action] || 0;
+    return base + pbDot + genDot;
+  };
+
+  const canAddDot = (action: ActionName): boolean => {
+    if (getActionCurrentDots(action) >= 2) return false;
+    const isPlaybookAction = playbookActionKeys.includes(action);
+    if (isPlaybookAction && totalPlaybookDotsUsed < 2) return true;
+    if (totalGeneralDotsUsed < 2) return true;
+    return false;
+  };
+
+  const handleAddDot = (action: ActionName) => {
+    if (!canAddDot(action)) return;
+    setDotsError(null);
+    const isPlaybookAction = playbookActionKeys.includes(action);
+
+    if (isPlaybookAction && totalPlaybookDotsUsed < 2) {
+      setAllocatedPlaybookDots((prev) => ({
+        ...prev,
+        [action]: (prev[action] || 0) + 1
+      }));
+    } else if (totalGeneralDotsUsed < 2) {
+      setAllocatedGeneralDots((prev) => ({
+        ...prev,
+        [action]: (prev[action] || 0) + 1
+      }));
+    }
+  };
+
+  const handleRemoveDot = (action: ActionName) => {
+    setDotsError(null);
+    if ((allocatedGeneralDots[action] || 0) > 0) {
+      setAllocatedGeneralDots((prev) => {
+        const nextVal = (prev[action] || 0) - 1;
+        const copy = { ...prev };
+        if (nextVal <= 0) {
+          delete copy[action];
+        } else {
+          copy[action] = nextVal;
+        }
+        return copy;
+      });
+    } else if ((allocatedPlaybookDots[action] || 0) > 0) {
+      setAllocatedPlaybookDots((prev) => {
+        const nextVal = (prev[action] || 0) - 1;
+        const copy = { ...prev };
+        if (nextVal <= 0) {
+          delete copy[action];
+        } else {
+          copy[action] = nextVal;
+        }
+        return copy;
+      });
+    }
   };
 
   const toggleFriend = (cName: string) => {
@@ -96,6 +174,12 @@ export function CharacterCreator({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    // Strict validation: must allocate 2 Playbook Dots and 2 General Dots
+    if (totalPlaybookDotsUsed !== 2 || totalGeneralDotsUsed !== 2) {
+      setDotsError('Blades in the Dark rule requirement: You must allocate exactly 4 starting dots (2 into playbook actions and 2 into any actions, max 2 per action).');
+      return;
+    }
 
     // Strict validation: must pick 1 Friend and 1 Foe
     if (!friendName || !foeName) {
