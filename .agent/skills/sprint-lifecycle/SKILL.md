@@ -8,7 +8,7 @@ description: "Directs the end-to-end lifecycle for feature development: sprint p
 ## Purpose
 Establishes a rigorous, repeatable Agile sprint engineering protocol for coding agents operating in the Blades Campaign Suite codebase. It formalizes:
 1. **Sprint Plan Artifact Creation**: Decomposing features into clear topics, atomic sprints, and Mermaid architectural data flows.
-2. **Per-Sprint Execution Cadence**: Maintaining code quality, zero type errors, and deterministic AST graph indexation via `graphify-ts`.
+2. **Per-Sprint Execution Cadence**: Maintaining code quality, zero type errors, and deterministic AST graph indexation via `graphifyy` (`npm run graph:update`).
 3. **Sprint Finish & Release Protocol**: Verifying production builds, authoring structured semantic release notes, merging to `main`, and presenting remote deployment steps.
 
 ---
@@ -46,16 +46,16 @@ Agents must execute sprints sequentially using the **Strict 4-Step Sprint Loop**
 
 ```mermaid
 flowchart LR
-    S1["1. npm run graphify\n(AST & Dep Scan)"] --> S2["2. Sprint Implementation\n(Code changes)"]
+    S1["1. npm run graph:update\n(AST & Dep Scan)"] --> S2["2. Sprint Implementation\n(Code changes)"]
     S2 --> S3["3. npx tsc --noEmit\n(Zero Type Errors)"]
-    S3 --> S4["4. npm run graphify +\nAtomic Git Commit"]
+    S3 --> S4["4. npm run graph:update +\nAtomic Git Commit"]
     S4 -.->|"Next Sprint"| S1
 ```
 
 ### Step 1 — Sprint Start (AST Indexation)
 Before touching code, run Graphify to index existing dependencies, types, and AST structures:
 ```powershell
-npm run graphify
+npm run graph:update
 ```
 
 ### Step 2 — Sprint Implementation
@@ -73,11 +73,10 @@ npx tsc --noEmit
 ### Step 4 — Sprint Commit
 Re-run Graphify to synchronize AST graphs, stage files, and produce an atomic commit:
 ```powershell
-npm run graphify
+npm run graph:update
 git add -A
 git commit -m "<type>(<scope>): <concise description>"
 ```
-Ensure `.graphify/` updates are included in the atomic commit or tracked alongside code changes.
 
 ---
 
@@ -113,7 +112,7 @@ Open [RELEASE_NOTES.md](file:///RELEASE_NOTES.md) and prepend a new release sect
   * Migration and RLS policy descriptions (if applicable).
 
   #### 📚 Knowledge & AST Indexation
-  * Updates to `.agent/knowledge/` and `graphify-ts` node/edge counts.
+  * Updates to `.agent/knowledge/` and `graphify` node/edge counts.
   ```
 
 ### Step 3 — Knowledge Base Audit
@@ -122,8 +121,8 @@ Verify if rules, glossary terms, or faction mechanics require documentation upda
 ### Step 4 — Final Feature Branch Commit
 If `RELEASE_NOTES.md` or `.agent/knowledge/` were modified:
 ```powershell
-npm run graphify
-git add RELEASE_NOTES.md .agent/knowledge/ .graphify/
+npm run graph:update
+git add RELEASE_NOTES.md .agent/knowledge/
 git commit -m "docs(release): update release notes and knowledge base for [X.Y.Z]"
 ```
 

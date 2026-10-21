@@ -17,7 +17,8 @@ import {
   CampaignRelationshipLabel,
   RollPosition,
   OperationPlanType,
-  EngagementRollResult
+  EngagementRollResult,
+  SetupBonus
 } from '@/types/blades';
 import { DOSKVOL_FACTIONS } from '@/lib/constants/doskvol';
 import { SCOUNDREL_PLAYBOOKS } from '@/lib/constants/playbooks';
@@ -33,6 +34,8 @@ import { CrewSheet } from '@/components/campaign/CrewSheet';
 import { DiceRoller } from '@/components/roller/DiceRoller';
 import { EngagementRollModal } from '@/components/roller/EngagementRollModal';
 import { DowntimeWizard } from '@/components/downtime/DowntimeWizard';
+import { EndOfSessionModal } from '@/components/campaign/EndOfSessionModal';
+import { IncarcerationModal } from '@/components/campaign/IncarcerationModal';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { CampaignInviteModal } from '@/components/campaign/CampaignInviteModal';
 import { useCampaignSync } from '@/lib/supabase/useCampaignSync';
@@ -49,7 +52,9 @@ import {
   Server,
   UserPlus,
   UserCheck,
-  Swords
+  Swords,
+  Lock,
+  Award
 } from 'lucide-react';
 
 // Baseline initial data
@@ -160,6 +165,58 @@ const INITIAL_CHARACTERS: Character[] = [
       { id: '1', name: 'Fine hand weapon', load: 1, equipped: true },
       { id: '2', name: 'Light Armor', load: 2, equipped: true },
       { id: '3', name: 'Throwing Knives', load: 1, equipped: false }
+    ],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'char_tessa',
+    campaign_id: 'camp_crows_foot',
+    user_id: 'current_user',
+    name: 'Tessa Drake',
+    alias: 'The Silk',
+    playbook: 'Slide',
+    heritage: 'Iruvia',
+    background: 'Noble',
+    vice: 'Pleasure',
+    vice_purveyor: 'The Silver Swan on Canal Row',
+    stress: 2,
+    trauma: [],
+    harm: {
+      level1: ['', ''],
+      level2: ['', ''],
+      level3: ''
+    },
+    healing_clock: 0,
+    armor_used: { standard: false, heavy: false, special: false },
+    action_dots: {
+      hunt: 0,
+      study: 1,
+      survey: 1,
+      tinker: 0,
+      finesse: 1,
+      prowl: 2,
+      skirmish: 0,
+      wreck: 0,
+      attune: 0,
+      command: 0,
+      consort: 2,
+      sway: 2
+    },
+    playbook_xp: 2,
+    insight_xp: 2,
+    prowess_xp: 1,
+    resolve_xp: 3,
+    coin: 3,
+    stash: 8,
+    load_level: 'Light',
+    special_abilities: SCOUNDREL_PLAYBOOKS['Slide'].specialAbilities.map((ab, i) => ({
+      ...ab,
+      unlocked: i === 0 // Rook's Gambit
+    })),
+    inventory: [
+      { id: 't1', name: 'Fine clothes and disguise', load: 1, equipped: true },
+      { id: 't2', name: 'Concealed palm pistol', load: 1, equipped: true }
     ],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -369,6 +426,11 @@ export default function Home() {
   // Downtime Wizard State
   const [showDowntimeWizard, setShowDowntimeWizard] = useState(false);
 
+  // End of Session & Incarceration Modals
+  const [showEndOfSession, setShowEndOfSession] = useState(false);
+  const [showIncarceration, setShowIncarceration] = useState(false);
+  const [activeSetupBonus, setActiveSetupBonus] = useState<SetupBonus | null>(null);
+
   // Auth & Invite Modals State
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -473,6 +535,65 @@ export default function Home() {
   // Update Scoundrel
   const handleUpdateCharacter = (updated: Character) => {
     setCharacters((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+  };
+
+  const handleUpdateOtherCharacter = (characterId: string, updates: Partial<Character>) => {
+    setCharacters((prev) =>
+      prev.map((c) =>
+        c.id === characterId ? { ...c, ...updates, updated_at: new Date().toISOString() } : c
+      )
+    );
+  };
+
+  const handleCommitSessionXp = (
+    updatedCharacters: Character[],
+    updatedCrew: Crew,
+    summaryLog: string
+  ) => {
+    setCharacters(updatedCharacters);
+    setCrew(updatedCrew);
+
+    const newEntry: JournalEntry = {
+      id: `jrn_session_${Date.now()}`,
+      campaign_id: activeCampaignId,
+      author_id: 'current_user',
+      title: 'End of Session XP Review',
+      content: summaryLog,
+      entry_type: 'score_log',
+      visibility: 'campaign_public',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setJournalEntries((prev) => [newEntry, ...prev]);
+    broadcastChange('journal_update', newEntry);
+  };
+
+  const handleCommitIncarceration = (
+    updatedCrew: Crew,
+    updatedCharacter?: Character,
+    summaryLog?: string
+  ) => {
+    setCrew(updatedCrew);
+    if (updatedCharacter) {
+      setCharacters((prev) =>
+        prev.map((c) => (c.id === updatedCharacter.id ? updatedCharacter : c))
+      );
+    }
+    if (summaryLog) {
+      const newEntry: JournalEntry = {
+        id: `jrn_prison_${Date.now()}`,
+        campaign_id: activeCampaignId,
+        author_id: 'current_user',
+        title: 'Ironhook Prison Incarceration',
+        content: summaryLog,
+        entry_type: 'score_log',
+        visibility: 'campaign_public',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      setJournalEntries((prev) => [newEntry, ...prev]);
+      broadcastChange('journal_update', newEntry);
+    }
   };
 
   // Add Scoundrel with Contacts & Relations
@@ -903,6 +1024,22 @@ ${result.narrative}
               <Hourglass className="w-3.5 h-3.5 text-purple-400" /> Downtime Phase
             </button>
 
+            <button
+              onClick={() => setShowEndOfSession(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-600 text-emerald-200 font-bold text-xs shadow transition-all hover:scale-105"
+              title="Review Session XP triggers for Scoundrels & Crew"
+            >
+              <Award className="w-3.5 h-3.5 text-emerald-400" /> End Session XP
+            </button>
+
+            <button
+              onClick={() => setShowIncarceration(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-600 text-red-200 font-bold text-xs shadow transition-all hover:scale-105"
+              title="Serve time in Ironhook Prison to clear Heat"
+            >
+              <Lock className="w-3.5 h-3.5 text-red-400" /> Incarceration
+            </button>
+
             {activeTab === 'character' && (
               <div className="flex items-center gap-2">
                 <select
@@ -953,6 +1090,8 @@ ${result.narrative}
             crew={crew}
             isGm={isGm}
             onUpdateCrew={setCrew}
+            onOpenEndOfSession={() => setShowEndOfSession(true)}
+            onOpenIncarceration={() => setShowIncarceration(true)}
           />
         )}
 
@@ -1016,13 +1155,18 @@ ${result.narrative}
       {showDiceRoller && activeCharacter && (
         <DiceRoller
           character={activeCharacter}
+          allCharacters={characters}
           clocks={clocks}
           defaultAction={rollAction}
           defaultAttribute={rollAttribute}
           initialMode={rollMode}
           initialPosition={rollerInitialPosition}
           initialNarrative={rollerInitialNarrative}
+          activeSetupBonus={activeSetupBonus}
+          onConsumeSetupBonus={() => setActiveSetupBonus(null)}
+          onRegisterSetupBonus={(bonus) => setActiveSetupBonus(bonus)}
           onUpdateCharacter={handleUpdateCharacter}
+          onUpdateOtherCharacter={handleUpdateOtherCharacter}
           onUpdateClock={handleUpdateClock}
           onClose={() => {
             setShowDiceRoller(false);
@@ -1053,6 +1197,27 @@ ${result.narrative}
           clocks={clocks}
           onCommitDowntime={handleCommitDowntime}
           onClose={() => setShowDowntimeWizard(false)}
+        />
+      )}
+
+      {/* End-of-Session XP Review Modal */}
+      {showEndOfSession && (
+        <EndOfSessionModal
+          characters={characters}
+          activeCharacterId={activeCharacterId}
+          crew={crew}
+          onCommitXp={handleCommitSessionXp}
+          onClose={() => setShowEndOfSession(false)}
+        />
+      )}
+
+      {/* Ironhook Incarceration Modal */}
+      {showIncarceration && (
+        <IncarcerationModal
+          crew={crew}
+          characters={characters}
+          onCommitIncarceration={handleCommitIncarceration}
+          onClose={() => setShowIncarceration(false)}
         />
       )}
 

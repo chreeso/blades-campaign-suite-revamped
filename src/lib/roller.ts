@@ -4,7 +4,10 @@ import {
   RollResult,
   OperationPlanType,
   EngagementRollFactors,
-  EngagementRollResult
+  EngagementRollResult,
+  GroupActionResult,
+  GroupParticipantRoll,
+  IncarcerationOutcome
 } from '@/types/blades';
 
 function rollD6(): number {
@@ -362,4 +365,173 @@ function getInitialObstaclePrompt(
     case 'Desperate':
       return `Immediate crisis! Ambush, surprise alarm, trapped passage, or overwhelming opposition right out of the gate.`;
   }
+}
+
+export function resolveGroupActionRoll(
+  leader: { id: string; name: string; dots: number },
+  members: { id: string; name: string; dots: number }[],
+  position: RollPosition,
+  effect: RollEffect
+): GroupActionResult {
+  const allParticipants = [
+    { ...leader, isLeader: true },
+    ...members.map((m) => ({ ...m, isLeader: false }))
+  ];
+
+  const participantRolls: GroupParticipantRoll[] = allParticipants.map((p) => {
+    const isZero = p.dots <= 0;
+    const count = isZero ? 2 : p.dots;
+    const dice = Array.from({ length: count }, () => rollD6());
+    const chosenDie = isZero ? Math.min(...dice) : Math.max(...dice);
+    const sixCount = dice.filter((d) => d === 6).length;
+    const isCrit = !isZero && sixCount >= 2;
+
+    let outcome: RollResult['outcome'] = 'bad_outcome';
+    if (isCrit) outcome = 'critical';
+    else if (chosenDie === 6) outcome = 'full_success';
+    else if (chosenDie >= 4) outcome = 'partial_success';
+
+    return {
+      characterId: p.id,
+      characterName: p.name,
+      dots: p.dots,
+      dice,
+      chosenDie,
+      outcome,
+      isZeroDice: isZero,
+      isLeader: p.isLeader,
+      failed: chosenDie <= 3
+    };
+  });
+
+  // Leader takes 1 stress per non-leader member who rolled 1-3
+  const leaderStressCost = participantRolls
+    .filter((pr) => !pr.isLeader && pr.failed)
+    .length;
+
+  // Best result rolled among all participants (RAW p. 134)
+  const hasCritical = participantRolls.some((pr) => pr.outcome === 'critical');
+  const hasFullSuccess = participantRolls.some((pr) => pr.outcome === 'full_success');
+  const hasPartial = participantRolls.some((pr) => pr.outcome === 'partial_success');
+
+  let bestOutcome: RollResult['outcome'] = 'bad_outcome';
+  if (hasCritical) bestOutcome = 'critical';
+  else if (hasFullSuccess) bestOutcome = 'full_success';
+  else if (hasPartial) bestOutcome = 'partial_success';
+
+  const bestDie = Math.max(...participantRolls.map((pr) => pr.chosenDie));
+  const baseTicks = effectToTicks(effect);
+  const overallTicks =
+    bestOutcome === 'critical'
+      ? Math.min(4, baseTicks + 1)
+      : bestOutcome === 'bad_outcome'
+      ? 0
+      : baseTicks;
+
+  const narrative =
+    bestOutcome === 'critical'
+      ? `GROUP CRITICAL! Coordinated masterclass led by ${leader.name}. Goal achieved with exceptional effect.`
+      : bestOutcome === 'full_success'
+      ? `GROUP SUCCESS! The team executes cleanly together under ${leader.name}'s direction.`
+      : bestOutcome === 'partial_success'
+      ? `GROUP PARTIAL SUCCESS: The team pulls through, but complications or costs arise.`
+      : `GROUP BAD OUTCOME: The team falters across the board. Catastrophic group consequence!`;
+
+  return {
+    leaderId: leader.id,
+    leaderName: leader.name,
+    leaderStressCost,
+    bestOutcome,
+    bestDie,
+    isCritical: hasCritical,
+    overallTicks,
+    narrative,
+    participantRolls
+  };
+}
+
+export function resolveIncarcerationRoll(
+  wantedLevel: number,
+  modifierDice: number = 0
+): IncarcerationOutcome {
+  const dicePool = wantedLevel + modifierDice;
+  const isZero = dicePool <= 0;
+  const count = isZero ? 2 : dicePool;
+  const dice = Array.from({ length: count }, () => rollD6());
+  const chosenDie = isZero ? Math.min(...dice) : Math.max(...dice);
+  const sixCount = dice.filter((d) => d === 6).length;
+  const isCritical = !isZero && sixCount >= 2;
+
+  if (isCritical) {
+    return {
+      dice,
+      chosenDie,
+      isZeroDice: false,
+      isCritical: true,
+      outcome: 'critical',
+      title: 'Ironhook Kingpin / Prison Claim Unlocked',
+      narrative: 'You establish dominance or cultivate deep leverage inside Ironhook. Claim 1 Prison Claim or +1 Status with an Ironhook faction.',
+      suggestedConsequences: [
+        'Claim Prison Turf or Underworld Inmate Network',
+        '+1 Faction Standing with Ironhook Inmates or Corrupt Guards',
+        'Sentence served with zero bodily harm'
+      ],
+      prisonClaimsAvailable: [
+        'Hardknocks (+1d Skirmish/Command with convicts)',
+        'The Informant Network (+1d Gather Info regarding prison)',
+        'Infirmary Orderly (Access to healing/physicker behind bars)',
+        'Yard Boss (+1 Scale when rallying convicts)',
+        'Smuggling Tunnel (Move contraband across the lightning barriers)'
+      ]
+    };
+  }
+
+  if (chosenDie === 6) {
+    return {
+      dice,
+      chosenDie,
+      isZeroDice: isZero,
+      isCritical: false,
+      outcome: 'full_success',
+      title: 'Clean Time',
+      narrative: 'You serve your sentence without incident. Your underworld reputation is respected behind bars.',
+      suggestedConsequences: [
+        'Sentence completed cleanly',
+        'No physical trauma or extra coin loss',
+        'Crew Wanted level reduced by 1, Heat purged'
+      ]
+    };
+  }
+
+  if (chosenDie >= 4) {
+    return {
+      dice,
+      chosenDie,
+      isZeroDice: isZero,
+      isCritical: false,
+      outcome: 'partial_success',
+      title: 'Hard Time (Standard Consequence)',
+      narrative: 'Ironhook takes its toll. The guards or rival inmates demand tribute or exact punishment.',
+      suggestedConsequences: [
+        'Suffer Level 2 Harm ("Beaten & Bruised in the Yard")',
+        'Lose 1 Coin or 2 Stash in protection payoffs',
+        '-1 Status with a rival prison gang'
+      ]
+    };
+  }
+
+  return {
+    dice,
+    chosenDie,
+    isZeroDice: isZero,
+    isCritical: false,
+    outcome: 'bad_outcome',
+    title: 'Brutal Lockup (Catastrophic Sentence)',
+    narrative: 'The Ironhook cells break the spirit. You are targeted in the yard, thrown into solitary confinement, or your sentence is prolonged.',
+    suggestedConsequences: [
+      'Suffer Level 3 Harm ("Maimed in the Yard")',
+      'Gain 1 Trauma condition (Cold, Reckless, or Soft)',
+      '+1 Year / Extended Sentence before release'
+    ]
+  };
 }

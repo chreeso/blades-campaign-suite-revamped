@@ -19,13 +19,16 @@ import {
   UserPlus,
   Check,
   X,
-  Zap
+  Zap,
+  Lock
 } from 'lucide-react';
 
 interface CrewSheetProps {
   crew: Crew;
   isGm: boolean;
   onUpdateCrew: (updated: Crew) => void;
+  onOpenEndOfSession?: () => void;
+  onOpenIncarceration?: () => void;
 }
 
 const COMMON_UPGRADES = [
@@ -79,7 +82,13 @@ const COMMON_UPGRADES = [
 const COHORT_EDGES = ['Fearsome', 'Independent', 'Loyal', 'Tenacious'];
 const COHORT_FLAWS = ['Principled', 'Savage', 'Unreliable', 'Wild'];
 
-export function CrewSheet({ crew, isGm, onUpdateCrew }: CrewSheetProps) {
+export function CrewSheet({
+  crew,
+  isGm,
+  onUpdateCrew,
+  onOpenEndOfSession,
+  onOpenIncarceration
+}: CrewSheetProps) {
   const crewInfo = CREW_PLAYBOOKS[crew.playbook];
 
   // Modals state
@@ -424,6 +433,15 @@ export function CrewSheet({ crew, isGm, onUpdateCrew }: CrewSheetProps) {
           <span className="text-[10px] text-zinc-400 leading-tight line-clamp-1" title={crewInfo.xpTrigger}>
             🎯 {crewInfo.xpTrigger}
           </span>
+          {onOpenEndOfSession && (
+            <button
+              type="button"
+              onClick={onOpenEndOfSession}
+              className="mt-1 w-full py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-emerald-400 font-semibold text-[10px] flex items-center justify-center gap-1 border border-zinc-700/60"
+            >
+              <Award className="w-3 h-3" /> End-of-Session Review
+            </button>
+          )}
         </div>
 
         {/* Heat & Wanted Level */}
@@ -482,6 +500,15 @@ export function CrewSheet({ crew, isGm, onUpdateCrew }: CrewSheetProps) {
               })}
             </div>
           </div>
+          {onOpenIncarceration && (
+            <button
+              type="button"
+              onClick={onOpenIncarceration}
+              className="mt-1 w-full py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-red-400 font-semibold text-[10px] flex items-center justify-center gap-1 border border-zinc-700/60"
+            >
+              <Lock className="w-3 h-3" /> Ironhook Incarceration
+            </button>
+          )}
         </div>
 
         {/* Crew Vault */}

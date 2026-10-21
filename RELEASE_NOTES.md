@@ -6,6 +6,32 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.7.0] — 2026-10-21
+
+### 🤝 Teamwork Maneuvers, End-of-Session XP Cadence & Ironhook Prison Engine
+
+This release brings full compliance for group collaboration, session progression cadence, and systemic underworld incarceration from *Blades in the Dark* System Reference Document (RAW p. 48, p. 134–135, p. 145, p. 148–151).
+
+#### 🌟 Key Improvements
+
+* **Teamwork Maneuvers Suite (`DiceRoller.tsx`, `roller.ts`, `blades.ts`)**:
+  * **Lead a Group Action**: Scoundrels select participating crew members; all pools roll simultaneously; the team takes the single best result, and the leader incurs 1 stress per participant rolling 1–3.
+  * **Protect a Teammate**: Resisting scoundrels can absorb consequences for allies, rolling resistance and taking the stress penalty onto themselves.
+  * **Targeted Assist**: Select the assisting scoundrel who suffers 1 stress while granting +1d to the roller.
+  * **Setup Actions & Advantage Tokens**: Successful setup actions produce a reusable `SetupBonus` passing +1 Effect or Improved Position to the following action.
+
+* **End-of-Session XP Review Wizard (`EndOfSessionModal.tsx`)**:
+  * Evaluates the 3 canonical Scoundrel XP prompts (Beliefs/Heritage, Vice/Traumas, and Playbook Trigger).
+  * Interactive XP allocator to distribute earned points between Playbook track (0–8) and Attribute tracks (Insight, Prowess, Resolve 0–6).
+  * Evaluates the 4 Crew XP prompts (Crew type alignment, Contending above station, Rep/Lair growth, and essential nature), directly updating Crew XP and checking for advancements.
+
+* **Ironhook Prison & Incarceration Subsystem (`IncarcerationModal.tsx`, `roller.ts`)**:
+  * Formal Incarceration fortune roll based on Wanted Level, Coin bribes, and faction favors.
+  * Resolves sentence severity: *Clean Time, Hard Time (Harm/Stash loss), Brutal Lockup (Level 3 Harm/Trauma)*, or *Prison Kingpin (Critical)* unlocking Prison Claims (*Hardknocks, Informant Network, Infirmary Orderly, Yard Boss, Smuggling Tunnel*).
+  * Automatically purges Crew Heat to 0 and reduces Wanted Level.
+
+---
+
 ## [0.6.0] — 2026-10-21
 
 ### 🏴‍☠️ Crew Advancements, Special Abilities, Cohorts & Bespoke Upgrades

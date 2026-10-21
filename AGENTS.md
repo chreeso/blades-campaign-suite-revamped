@@ -65,4 +65,4 @@ The directory [`.agent/knowledge/`](file:///.agent/knowledge/) contains determin
 2. **Linear Clocks**: Clocks must render as segmented linear progress bars (not circular pie charts).
 3. **Strict Multi-Campaign Isolation**: Every table with campaign data must carry `campaign_id` with RLS enforcing GM vs Player permissions.
 4. **Context Precision**: Use Graphify commands (`npm run graph:find`, `graph:callers`, `graph:blast`, `graph:summary`) and `graphify-out/GRAPH_REPORT.md` rather than reading raw bulk files into prompts.
-5. **Sprint Cadence Integrity**: Follow the mandatory 4-step loop per sprint (`npm run graphify` -> implement -> `npx tsc --noEmit` -> `npm run graphify` + atomic commit) and the local release protocol in `sprint-lifecycle`.
+5. **Sprint Cadence Integrity**: Follow the mandatory 4-step loop per sprint (`npm run graph:update` -> implement -> `npx tsc --noEmit` -> `npm run graph:update` + atomic commit) and the local release protocol in `sprint-lifecycle`.
