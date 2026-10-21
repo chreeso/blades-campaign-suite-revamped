@@ -5,7 +5,44 @@ export type HoldLevel = 'Weak' | 'Strong';
 export type LoadCategory = 'Light' | 'Normal' | 'Heavy';
 export type RollPosition = 'Controlled' | 'Risky' | 'Desperate';
 export type RollEffect = 'None' | 'Limited' | 'Standard' | 'Great';
-export type RollType = 'action' | 'resistance' | 'fortune';
+export type RollType = 'action' | 'resistance' | 'fortune' | 'engagement';
+
+export type OperationPlanType =
+  | 'Assault'
+  | 'Deception'
+  | 'Stealth'
+  | 'Occult'
+  | 'Social'
+  | 'Transport';
+
+export interface EngagementRollFactors {
+  planType: OperationPlanType;
+  detail: string;
+  targetFactionId?: string;
+  targetFactionName?: string;
+  crewTier: number;
+  targetTier: number;
+  isBold: boolean;
+  exposesVulnerability: boolean;
+  contactAssistance: boolean;
+  priorSetup: boolean;
+  isTargetFortified: boolean;
+  isHostileDistrict: boolean;
+  inclementWeather: boolean;
+}
+
+export interface EngagementRollResult {
+  dice: number[];
+  chosenDie: number;
+  isZeroDice: boolean;
+  isCritical: boolean;
+  startingPosition: RollPosition;
+  outcome: 'critical' | 'full_success' | 'partial_success' | 'bad_outcome';
+  narrative: string;
+  initialObstaclePrompt: string;
+  finalDicePool: number;
+  factors: EngagementRollFactors;
+}
 
 export interface RollResult {
   dice: number[];

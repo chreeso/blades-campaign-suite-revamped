@@ -1,4 +1,11 @@
-import { RollPosition, RollEffect, RollResult } from '@/types/blades';
+import {
+  RollPosition,
+  RollEffect,
+  RollResult,
+  OperationPlanType,
+  EngagementRollFactors,
+  EngagementRollResult
+} from '@/types/blades';
 
 function rollD6(): number {
   return Math.floor(Math.random() * 6) + 1;
@@ -157,5 +164,202 @@ function getNarrative(
         return 'BAD OUTCOME (Risky): The action fails or hits serious complications. Suffer standard consequence.';
       }
       return 'BAD OUTCOME (Desperate): Catastrophic setback. Suffer severe harm or devastating obstacle advance.';
+  }
+}
+
+export const OPERATION_PLANS: Record<
+  OperationPlanType,
+  { name: string; detailPrompt: string; description: string; example: string }
+> = {
+  Assault: {
+    name: 'Assault',
+    detailPrompt: 'The point of attack',
+    description: 'Direct, violent force to seize, breach, or destroy a target.',
+    example: 'E.g., "The rear service gates of the warehouse."'
+  },
+  Deception: {
+    name: 'Deception',
+    detailPrompt: 'The method of deception',
+    description: 'Tricking, bluffing, forging, or luring the target.',
+    example: 'E.g., "Posing as City Watch inspectors bearing forged quarantine warrants."'
+  },
+  Stealth: {
+    name: 'Stealth',
+    detailPrompt: 'The point of infiltration',
+    description: 'Quiet, unseen trespass, burglary, or covert extraction.',
+    example: 'E.g., "The rooftop skylight over the records vault."'
+  },
+  Occult: {
+    name: 'Occult',
+    detailPrompt: 'The arcane power or ritual source',
+    description: 'Harnessing spirits, lightning-oil artifacts, rituals, or ghost-field echoes.',
+    example: 'E.g., "A siphon vessel containing the drowned soul of the former dockmaster."'
+  },
+  Social: {
+    name: 'Social',
+    detailPrompt: 'The social connection or pretext',
+    description: 'Negotiation, persuasion, seduction, blackmail, or party crashing.',
+    example: 'E.g., "A formal invitation to Lord Strangford’s masquerade."'
+  },
+  Transport: {
+    name: 'Transport',
+    detailPrompt: 'The route and means of travel',
+    description: 'Smuggling, conveyance, canal chases, or escaping through the Deathlands.',
+    example: 'E.g., "A muffled canal skiff slipping beneath the Silkshore toll bridge."'
+  }
+};
+
+export function calculateEngagementDicePool(factors: EngagementRollFactors): {
+  baseDice: number;
+  advantages: number;
+  disadvantages: number;
+  finalDicePool: number;
+} {
+  const baseDice = 1; // 1d for sheer luck
+  let advantages = 0;
+  let disadvantages = 0;
+
+  // Tier difference
+  const tierDelta = factors.crewTier - factors.targetTier;
+  if (tierDelta > 0) {
+    advantages += tierDelta;
+  } else if (tierDelta < 0) {
+    disadvantages += Math.abs(tierDelta);
+  }
+
+  // Advantages
+  if (factors.isBold) advantages += 1;
+  if (factors.exposesVulnerability) advantages += 1;
+  if (factors.contactAssistance) advantages += 1;
+  if (factors.priorSetup) advantages += 1;
+
+  // Disadvantages
+  if (factors.isTargetFortified) disadvantages += 1;
+  if (factors.isHostileDistrict) disadvantages += 1;
+  if (factors.inclementWeather) disadvantages += 1;
+
+  const finalDicePool = baseDice + advantages - disadvantages;
+
+  return {
+    baseDice,
+    advantages,
+    disadvantages,
+    finalDicePool
+  };
+}
+
+export function resolveEngagementRoll(factors: EngagementRollFactors): EngagementRollResult {
+  const { finalDicePool } = calculateEngagementDicePool(factors);
+  const isZeroDice = finalDicePool <= 0;
+  const diceCount = isZeroDice ? 2 : finalDicePool;
+  const dice = Array.from({ length: diceCount }, () => rollD6());
+
+  if (isZeroDice) {
+    const chosenDie = Math.min(...dice);
+    let outcome: EngagementRollResult['outcome'] = 'bad_outcome';
+    let startingPosition: RollPosition = 'Desperate';
+
+    if (chosenDie === 6) {
+      outcome = 'full_success';
+      startingPosition = 'Controlled';
+    } else if (chosenDie >= 4) {
+      outcome = 'partial_success';
+      startingPosition = 'Risky';
+    } else {
+      outcome = 'bad_outcome';
+      startingPosition = 'Desperate';
+    }
+
+    return {
+      dice,
+      chosenDie,
+      isZeroDice: true,
+      isCritical: false,
+      startingPosition,
+      outcome,
+      finalDicePool,
+      factors,
+      narrative: getEngagementNarrative(outcome, startingPosition, false, true),
+      initialObstaclePrompt: getInitialObstaclePrompt(startingPosition, factors.planType)
+    };
+  }
+
+  const sixCount = dice.filter((d) => d === 6).length;
+  const isCritical = sixCount >= 2;
+  const chosenDie = Math.max(...dice);
+
+  let outcome: EngagementRollResult['outcome'] = 'bad_outcome';
+  let startingPosition: RollPosition = 'Desperate';
+
+  if (isCritical) {
+    outcome = 'critical';
+    startingPosition = 'Controlled';
+  } else if (chosenDie === 6) {
+    outcome = 'full_success';
+    startingPosition = 'Controlled';
+  } else if (chosenDie >= 4) {
+    outcome = 'partial_success';
+    startingPosition = 'Risky';
+  } else {
+    outcome = 'bad_outcome';
+    startingPosition = 'Desperate';
+  }
+
+  return {
+    dice,
+    chosenDie,
+    isZeroDice: false,
+    isCritical,
+    startingPosition,
+    outcome,
+    finalDicePool,
+    factors,
+    narrative: getEngagementNarrative(outcome, startingPosition, isCritical, false),
+    initialObstaclePrompt: getInitialObstaclePrompt(startingPosition, factors.planType, isCritical)
+  };
+}
+
+function getEngagementNarrative(
+  outcome: EngagementRollResult['outcome'],
+  position: RollPosition,
+  isCritical: boolean,
+  isZeroDice: boolean
+): string {
+  if (isCritical) {
+    return 'CRITICAL SUCCESS: Exceptional start! The scoundrels have already overcome the first obstacle and encounter the next situation in a CONTROLLED position with significant leverage.';
+  }
+
+  switch (outcome) {
+    case 'full_success':
+      return `FULL SUCCESS: Good start! The scoundrels slip past initial hazards and encounter the first obstacle from a CONTROLLED position.${
+        isZeroDice ? ' (0-dice luck!)' : ''
+      }`;
+    case 'partial_success':
+      return `PARTIAL SUCCESS: Mixed start! The scoundrels encounter the first obstacle in a standard RISKY position with potential complications looming.${
+        isZeroDice ? ' (0-dice luck!)' : ''
+      }`;
+    case 'bad_outcome':
+    default:
+      return `BAD OUTCOME: Bad start! The operation immediately hits trouble. The scoundrels face the first obstacle from a DESPERATE position!${
+        isZeroDice ? ' (Took lowest of 2 dice)' : ''
+      }`;
+  }
+}
+
+function getInitialObstaclePrompt(
+  position: RollPosition,
+  planType: OperationPlanType,
+  isCritical: boolean = false
+): string {
+  if (isCritical) {
+    return `First obstacle bypassed! The crew is already past perimeter sentries/locks through brilliant ${planType.toLowerCase()} execution and holds the high ground.`;
+  }
+  switch (position) {
+    case 'Controlled':
+      return `Crew has the initiative and an advantageous stance. First ${planType.toLowerCase()} obstacle can be approached deliberately.`;
+    case 'Risky':
+      return `Standard confrontation. The crew and the obstacle meet on equal footing under pressure.`;
+    case 'Desperate':
+      return `Immediate crisis! Ambush, surprise alarm, trapped passage, or overwhelming opposition right out of the gate.`;
   }
 }
