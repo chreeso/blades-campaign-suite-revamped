@@ -6,6 +6,33 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.5.1] — 2026-10-21
+
+### 💉 Scoundrel Recovery Engine & 4-Segment Healing Clock
+
+This release implements the full, authentic **Recovery and Healing** mechanics from the *Blades in the Dark* System Reference Document (RAW p. 155). Scoundrels now track their own dedicated 4-segment linear Healing project clock, can seek treatment from physickers or attempt self-treatment via Tinker, and experience automatic cascading harm reduction upon clock completion.
+
+#### 🌟 Key Improvements
+
+* **Dedicated 4-Segment Healing Clock (`HarmMatrix.tsx`, `CharacterSheet.tsx`)**:
+  * Added `healing_clock: number` (0 to 4) to the character model and UI.
+  * Rendered as an interactive 4-segment linear progress bar directly within the **Harm & Armor** matrix on the character sheet.
+  * Supports manual segment adjustments and a one-click manual "Heal 1 Level (Clear Clock)" action for table flexibility.
+
+* **Authentic Downtime Recovery Activity (`DowntimeWizard.tsx`, `downtime.ts`)**:
+  * **Treatment Selection**: Scoundrels can choose treatment from an NPC Physicker (Quality 1d–4d, default 2d) or attempt Self-Treatment via their **Tinker** action rating.
+  * **Incapacitation Cost (RAW p. 155)**: Attempting self-treatment while suffering Level 3 harm automatically imposes a 2-stress cost to push through the agony.
+  * **Standard Recovery Tick Table**: Critical $\to$ 5 ticks (fills 4 and carries over 1); 6 $\to$ 3 ticks; 4/5 $\to$ 2 ticks; 1–3 $\to$ 1 tick.
+
+* **Automated Cascading Harm Reduction (`downtime.ts`)**:
+  * When the 4-segment Healing clock reaches or exceeds 4 segments:
+    * All **Level 1** harms are completely cleared.
+    * All **Level 2** harms are shifted down to Level 1.
+    * Any **Level 3** harm is shifted down to Level 2.
+    * Clock resets to 0 (carrying over any remainder from critical rolls).
+
+---
+
 ## [0.5.0] — 2026-10-21
 
 ### ⚔️ The Engagement Roll & Score Planning Engine

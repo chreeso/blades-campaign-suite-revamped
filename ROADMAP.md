@@ -15,7 +15,7 @@
 | **Desperate Action XP** | Desperate action rolls immediately award +1 XP to the rolled action's attribute track. | Automated in [`DiceRoller.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/roller/DiceRoller.tsx). | **Compliant** |
 | **Linear Clocks** | 4, 6, 8, 12 segments; rendered as linear progress bars (never circular pie charts); GM secret vs public visibility. | Implemented in [`LinearClock.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/ui/LinearClock.tsx) & [`ClocksManager.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/ClocksManager.tsx). | **Compliant** |
 | **Engagement Roll** | Formal pre-score fortune roll (1d luck base + plan detail, target vulnerability, contacts, tier differences) determining initial position. | Fully modeled in [`EngagementRollModal.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/roller/EngagementRollModal.tsx) and [`roller.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/roller.ts). | **Compliant** |
-| **Recovery & Healing Clock** | 4-segment Healing clock on PC sheet. Downtime Recovery rolls Healer Quality/Tinker. When filled, all harm drops 1 level. | Placeholder in Downtime Wizard ticks a generic clock; **does not heal character harm matrix**. | **Incomplete (Phase 1)** |
+| **Recovery & Healing Clock** | 4-segment Healing clock on PC sheet. Downtime Recovery rolls Healer Quality/Tinker. When filled, all harm drops 1 level. | Modeled in [`HarmMatrix.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/ui/HarmMatrix.tsx), [`DowntimeWizard.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/downtime/DowntimeWizard.tsx), and [`downtime.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/downtime.ts). | **Compliant** |
 | **Downtime Activities** | 6 canonical activities: *Vice, Reduce Heat, Train, Recover, Acquire Asset, Long-Term Project*. 2 free (or 1 at War); extras cost 1 Coin/Rep. | Has Vice, Heat, Train, and placeholder Recover. **Acquire Asset and Long-Term Project are missing**; extra activity costs are not deducted. | **Incomplete (Phase 1)** |
 | **Crew XP & Advancements** | 8-box Crew XP track with playbook triggers. Marks unlock Crew Special Abilities or 2 Upgrades. | [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx) tracks Rep, Tier, and Hold, but **Crew XP is completely absent**. | **Missing (Phase 2)** |
 | **Crew Special Abilities** | Each Crew playbook has unique special abilities that can be taken at advancement. | Abilities exist in constants, but **no interactive selector or activation UI** exists on the Crew sheet. | **Missing (Phase 2)** |
@@ -99,11 +99,11 @@ flowchart TD
   - [x] Fortune roll resolution: Critical (through obstacle in Controlled), 6 (Controlled), 4/5 (Risky), 1-3 (Desperate).
   - [x] Direct export of engagement outcome into the main `DiceRoller` starting state.
 
-- [ ] **1.2 Scoundrel Recovery Engine & 4-Segment Healing Clock**
-  - [ ] Add `healing_clock: number` (0 to 4) to `Character` type and database schema.
-  - [ ] Render 4-segment linear Healing bar on [`CharacterSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/character/CharacterSheet.tsx).
-  - [ ] Update `handleRecover` in [`DowntimeWizard.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/downtime/DowntimeWizard.tsx): roll Healer Quality / Tinker (1-3: 1 tick, 4/5: 2 ticks, 6: 3 ticks, Crit: 5 ticks).
-  - [ ] When the healing clock fills (4 segments): reset clock to 0 and shift all existing harm down by 1 level (Level 3 becomes Level 2, Level 2 becomes Level 1, Level 1 clears).
+- [x] **1.2 Scoundrel Recovery Engine & 4-Segment Healing Clock**
+  - [x] Add `healing_clock: number` (0 to 4) to `Character` type and database schema.
+  - [x] Render 4-segment linear Healing bar on [`CharacterSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/character/CharacterSheet.tsx).
+  - [x] Update `handleRecover` in [`DowntimeWizard.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/downtime/DowntimeWizard.tsx): roll Healer Quality / Tinker (1-3: 1 tick, 4/5: 2 ticks, 6: 3 ticks, Crit: 5 ticks).
+  - [x] When the healing clock fills (4 segments): reset clock to 0 and shift all existing harm down by 1 level (Level 3 becomes Level 2, Level 2 becomes Level 1, Level 1 clears).
 
 - [ ] **1.3 Complete Downtime Activities (Acquire Asset & Long-Term Project)**
   - [ ] Implement **Acquire Asset** step: rolls Crew Tier against asset quality table (1-3: Tier-1, 4/5: Tier, 6: Tier+1, Crit: Tier+2); option to spend 1 Coin to bump quality.
