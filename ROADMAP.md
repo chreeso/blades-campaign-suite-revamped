@@ -172,13 +172,13 @@ flowchart TD
 ### Phase 4: Immersion, GM Oracles & Cartography
 *Goal: Provide GM tools and rich world-building assets.*
 
-- [ ] **4.1 Procedural Doskvol Job / Score Generator**
-  - [ ] Client, Target, Work, Twist, and Connected Faction generator from SRD tables.
-  - [ ] One-click export into `JournalLedger` as an active Score entry.
+- [x] **4.1 Procedural Doskvol Job / Score Generator**
+  - [x] Client, Target, Work, Twist, and Connected Faction generator from SRD tables.
+  - [x] One-click export into `JournalLedger` as an active Score entry.
 
-- [ ] **4.2 Interactive Doskvol District & Turf Territory Map**
-  - [ ] Interactive map with district overlays (Crow's Foot, Docks, Silkshore, etc.).
-  - [ ] Displays Crew Lair, Hunting Grounds, Claims, and Faction territory markers.
+- [x] **4.2 Interactive Doskvol District & Turf Territory Map**
+  - [x] Interactive map with district overlays (Crow's Foot, Docks, Silkshore, etc.).
+  - [x] Displays Crew Lair, Hunting Grounds, Claims, and Faction territory markers.
 
-- [ ] **4.3 Atmospheric Audio Cues (Optional)**
-  - [ ] Subtle sound bites on Clock completion, Trauma infliction, and Critical rolls.
+- [x] **4.3 Atmospheric Audio Cues (Optional)**
+  - [x] Subtle sound bites on Clock completion, Trauma infliction, and Critical rolls.
