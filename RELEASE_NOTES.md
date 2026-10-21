@@ -6,6 +6,35 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.5.2] — 2026-10-21
+
+### 📦 Complete RAW Downtime Activities Hub & Overindulgence Economy
+
+This release completes all 6 canonical Downtime activities from the *Blades in the Dark* System Reference Document (RAW p. 153–158). It introduces dedicated systems for **Acquire Asset**, **Long-Term Projects**, strictly enforces **Overindulgence consequences**, and models the downtime economy where extra activities cost 1 Coin or 1 Rep.
+
+#### 🌟 Key Improvements
+
+* **Acquire Asset Activity (`DowntimeWizard.tsx`, `downtime.ts`)**:
+  * Implements Crew Tier fortune rolls determining asset quality: Critical $\to$ Tier+2, 6 $\to$ Tier+1, 4/5 $\to$ Tier, 1–3 $\to$ Tier-1.
+  * Allows spending bonus Coin (1 Coin per +1 Tier) directly deducted from the scoundrel's purse.
+
+* **Long-Term Project Engine (`DowntimeWizard.tsx`, `downtime.ts`)**:
+  * Select any existing campaign project clock or create a new project clock on the fly (4, 6, or 8 segments).
+  * Roll any chosen scoundrel action rating: Critical $\to$ +5 ticks, 6 $\to$ +3 ticks, 4/5 $\to$ +2 ticks, 1–3 $\to$ +1 tick.
+
+* **Overindulgence Consequence Enforcer (RAW p. 156)**:
+  * Rolling above current stress clears all stress but forces selection of a canonical consequence:
+    * *Attract Trouble*: Automatically adds +2 Heat and prompts an entanglement.
+    * *Brag*: Adds +2 Heat to the crew.
+    * *Lost*: Logs the scoundrel as vanished and unavailable for the upcoming score.
+    * *Tapped*: Flags the vice purveyor as refusing service.
+
+* **Downtime Activity Allowance & Payment Economy**:
+  * Tracks activities used against free allowance (2 free, or 1 at War).
+  * Dynamically prompts and deducts **1 Coin** (Purse) or **1 Rep** (Crew) for each activity beyond the limit.
+
+---
+
 ## [0.5.1] — 2026-10-21
 
 ### 💉 Scoundrel Recovery Engine & 4-Segment Healing Clock

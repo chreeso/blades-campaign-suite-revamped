@@ -16,7 +16,7 @@
 | **Linear Clocks** | 4, 6, 8, 12 segments; rendered as linear progress bars (never circular pie charts); GM secret vs public visibility. | Implemented in [`LinearClock.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/ui/LinearClock.tsx) & [`ClocksManager.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/ClocksManager.tsx). | **Compliant** |
 | **Engagement Roll** | Formal pre-score fortune roll (1d luck base + plan detail, target vulnerability, contacts, tier differences) determining initial position. | Fully modeled in [`EngagementRollModal.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/roller/EngagementRollModal.tsx) and [`roller.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/roller.ts). | **Compliant** |
 | **Recovery & Healing Clock** | 4-segment Healing clock on PC sheet. Downtime Recovery rolls Healer Quality/Tinker. When filled, all harm drops 1 level. | Modeled in [`HarmMatrix.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/ui/HarmMatrix.tsx), [`DowntimeWizard.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/downtime/DowntimeWizard.tsx), and [`downtime.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/downtime.ts). | **Compliant** |
-| **Downtime Activities** | 6 canonical activities: *Vice, Reduce Heat, Train, Recover, Acquire Asset, Long-Term Project*. 2 free (or 1 at War); extras cost 1 Coin/Rep. | Has Vice, Heat, Train, and placeholder Recover. **Acquire Asset and Long-Term Project are missing**; extra activity costs are not deducted. | **Incomplete (Phase 1)** |
+| **Downtime Activities** | 6 canonical activities: *Vice, Reduce Heat, Train, Recover, Acquire Asset, Long-Term Project*. 2 free (or 1 at War); extras cost 1 Coin/Rep. | Fully implemented in [`DowntimeWizard.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/downtime/DowntimeWizard.tsx) and [`downtime.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/downtime.ts). | **Compliant** |
 | **Crew XP & Advancements** | 8-box Crew XP track with playbook triggers. Marks unlock Crew Special Abilities or 2 Upgrades. | [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx) tracks Rep, Tier, and Hold, but **Crew XP is completely absent**. | **Missing (Phase 2)** |
 | **Crew Special Abilities** | Each Crew playbook has unique special abilities that can be taken at advancement. | Abilities exist in constants, but **no interactive selector or activation UI** exists on the Crew sheet. | **Missing (Phase 2)** |
 | **Cohorts (Gangs & Experts)** | Crews recruit Gangs or Experts with Quality (Tier), Scale, Edges (Fearsome, Loyal), Flaws (Savage, Unreliable), and Cohort Harm. | **Missing.** No Cohort models or UI exist in [`blades.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/types/blades.ts) or [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx). | **Missing (Phase 2)** |
@@ -105,14 +105,14 @@ flowchart TD
   - [x] Update `handleRecover` in [`DowntimeWizard.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/downtime/DowntimeWizard.tsx): roll Healer Quality / Tinker (1-3: 1 tick, 4/5: 2 ticks, 6: 3 ticks, Crit: 5 ticks).
   - [x] When the healing clock fills (4 segments): reset clock to 0 and shift all existing harm down by 1 level (Level 3 becomes Level 2, Level 2 becomes Level 1, Level 1 clears).
 
-- [ ] **1.3 Complete Downtime Activities (Acquire Asset & Long-Term Project)**
-  - [ ] Implement **Acquire Asset** step: rolls Crew Tier against asset quality table (1-3: Tier-1, 4/5: Tier, 6: Tier+1, Crit: Tier+2); option to spend 1 Coin to bump quality.
-  - [ ] Implement **Long-Term Project** step: select action, roll pool, tick selected campaign project clock (1, 2, 3, or 5 ticks).
-  - [ ] Track activity count against free allowance (2 activities, or 1 if Crew is at War).
-  - [ ] Automatically deduct 1 Coin (Purse) or 1 Rep per activity beyond the free limit.
+- [x] **1.3 Complete Downtime Activities (Acquire Asset & Long-Term Project)**
+  - [x] Implement **Acquire Asset** step: rolls Crew Tier against asset quality table (1-3: Tier-1, 4/5: Tier, 6: Tier+1, Crit: Tier+2); option to spend 1 Coin to bump quality.
+  - [x] Implement **Long-Term Project** step: select action, roll pool, tick selected campaign project clock (1, 2, 3, or 5 ticks).
+  - [x] Track activity count against free allowance (2 activities, or 1 if Crew is at War).
+  - [x] Automatically deduct 1 Coin (Purse) or 1 Rep per activity beyond the free limit.
 
-- [ ] **1.4 Vice Overindulgence Enforcer**
-  - [ ] Enforce overindulgence condition picker when `chosenDie > currentStress`:
+- [x] **1.4 Vice Overindulgence Enforcer**
+  - [x] Enforce overindulgence condition picker when `chosenDie > currentStress`:
     - *Attract Trouble*: +2 Heat to Crew.
     - *Brag*: +2 Heat to Crew.
     - *Lost*: Flag scoundrel as unavailable for 1 score.
