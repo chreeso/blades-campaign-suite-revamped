@@ -6,7 +6,7 @@ import { SYSTEM_RELATIONSHIP_BADGES } from '@/lib/constants/playbooks';
 import { DotRating } from '@/components/ui/DotRating';
 import { StressBar } from '@/components/ui/StressBar';
 import { HarmMatrix } from '@/components/ui/HarmMatrix';
-import { Coins, Sparkles, Backpack, Award, ArrowRight, ArrowLeft, Dices, ShieldCheck, Users, Shield, Plus, Tag, EyeOff, Check, UserPlus, Link2 } from 'lucide-react';
+import { Coins, Sparkles, Backpack, Award, ArrowRight, ArrowLeft, Dices, ShieldCheck, Users, Shield, Plus, Tag, EyeOff, Check, UserPlus, Link2, Pencil, AlertTriangle } from 'lucide-react';
 import { QuickNpcModal, QuickNpcSubmitData } from '@/components/campaign/QuickNpcModal';
 
 interface CharacterSheetProps {
@@ -67,6 +67,7 @@ export function CharacterSheet({
   isGm = false
 }: CharacterSheetProps) {
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [managingBadgesRelId, setManagingBadgesRelId] = useState<string | null>(null);
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('amber');
@@ -369,28 +370,47 @@ export function CharacterSheet({
 
               {/* Actions in this attribute */}
               <div className="flex flex-col gap-1">
-                {attrData.actions.map((act) => (
-                  <div key={act} className="flex items-center gap-1 group">
-                    {onRollAction && (
-                      <button
-                        type="button"
-                        onClick={() => onRollAction(act)}
-                        className="p-1 rounded text-zinc-500 hover:text-amber-400 hover:bg-zinc-800 transition-colors"
-                        title={`Roll ${act}`}
-                      >
-                        <Dices className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    <div className="flex-1">
-                      <DotRating
-                        label={act}
-                        value={character.action_dots[act] || 0}
-                        onChange={(val) => updateDots(act, val)}
-                        readOnly={readOnly}
-                      />
+                {attrData.actions.map((act) => {
+                  const dots = character.action_dots[act] || 0;
+                  return (
+                    <div
+                      key={act}
+                      onClick={() => {
+                        if (!isEditMode && onRollAction) {
+                          onRollAction(act);
+                        }
+                      }}
+                      className={`flex items-center gap-1 group rounded p-1 transition-colors ${
+                        !isEditMode
+                          ? 'cursor-pointer hover:bg-zinc-800/60'
+                          : ''
+                      }`}
+                      title={!isEditMode ? `Click to roll ${act} (${dots}d)` : undefined}
+                    >
+                      {onRollAction && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRollAction(act);
+                          }}
+                          className="p-1 rounded text-zinc-500 hover:text-amber-400 hover:bg-zinc-800 transition-colors"
+                          title={`Roll ${act}`}
+                        >
+                          <Dices className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <div className="flex-1">
+                        <DotRating
+                          label={act}
+                          value={dots}
+                          onChange={(val) => updateDots(act, val)}
+                          readOnly={readOnly || !isEditMode}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )
