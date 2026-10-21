@@ -156,6 +156,7 @@ export interface Character {
   stress: number; // 0 to 9
   trauma: TraumaCondition[]; // max 4
   harm: HarmState;
+  healing_clock: number; // 0 to 4 (Recovery project)
   armor_used: ArmorState;
   action_dots: Record<ActionName, number>;
   playbook_xp: number; // 0 to 8

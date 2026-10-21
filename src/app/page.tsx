@@ -114,6 +114,7 @@ const INITIAL_CHARACTERS: Character[] = [
       level2: ['Bruised Ribs', ''],
       level3: ''
     },
+    healing_clock: 1,
     armor_used: { standard: false, heavy: false, special: false },
     action_dots: {
       hunt: 1,

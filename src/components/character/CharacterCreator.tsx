@@ -261,6 +261,7 @@ export function CharacterCreator({
         level2: ['', ''],
         level3: ''
       },
+      healing_clock: 0,
       armor_used: {
         standard: false,
         heavy: false,
