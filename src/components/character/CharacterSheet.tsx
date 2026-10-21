@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Character, ActionName, AttributeName, LoadCategory } from '@/types/blades';
+import { Character, ActionName, AttributeName, LoadCategory, NPC, Faction, CharacterNpcRelation, CampaignRelationshipLabel } from '@/types/blades';
 import { DotRating } from '@/components/ui/DotRating';
 import { StressBar } from '@/components/ui/StressBar';
 import { HarmMatrix } from '@/components/ui/HarmMatrix';
-import { Coins, Sparkles, Backpack, Award, ArrowRight, ArrowLeft, Dices, ShieldCheck } from 'lucide-react';
+import { Coins, Sparkles, Backpack, Award, ArrowRight, ArrowLeft, Dices, ShieldCheck, Users, Shield, Plus, Tag, EyeOff } from 'lucide-react';
 
 interface CharacterSheetProps {
   character: Character;
@@ -13,6 +13,13 @@ interface CharacterSheetProps {
   onRollAction?: (action: ActionName) => void;
   onRollResistance?: (attr: AttributeName) => void;
   readOnly?: boolean;
+  npcs?: NPC[];
+  factions?: Faction[];
+  relations?: CharacterNpcRelation[];
+  campaignLabels?: CampaignRelationshipLabel[];
+  onUpdateRelation?: (updated: CharacterNpcRelation) => void;
+  onCreateCampaignLabel?: (name: string, color: string) => void;
+  isGm?: boolean;
 }
 
 const ATTRIBUTES: Record<AttributeName, { label: string; xpKey: 'insight_xp' | 'prowess_xp' | 'resolve_xp'; actions: ActionName[] }> = {
@@ -44,9 +51,26 @@ export function CharacterSheet({
   onUpdateCharacter,
   onRollAction,
   onRollResistance,
-  readOnly = false
+  readOnly = false,
+  npcs = [],
+  factions = [],
+  relations = [],
+  campaignLabels = [],
+  onUpdateRelation,
+  onCreateCampaignLabel,
+  isGm = false
 }: CharacterSheetProps) {
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+
+  const romanTier = (tier: number) => ['0', 'I', 'II', 'III', 'IV', 'V', 'VI'][tier] || tier;
+
+  const getScoreTier = (score: number): { label: string; color: string; icon: string } => {
+    if (score <= 20) return { label: 'Arch-Enemy', color: 'text-red-400 bg-red-950/60 border-red-800', icon: '▼' };
+    if (score <= 40) return { label: 'Rival', color: 'text-rose-400 bg-rose-950/60 border-rose-800', icon: '▼' };
+    if (score <= 60) return { label: 'Neutral', color: 'text-zinc-400 bg-zinc-900 border-zinc-700', icon: '●' };
+    if (score <= 80) return { label: 'Ally', color: 'text-amber-400 bg-amber-950/60 border-amber-800', icon: '▲' };
+    return { label: 'Devoted Friend', color: 'text-yellow-300 bg-yellow-950/60 border-yellow-600', icon: '▲' };
+  };
 
   // Update handlers
   const updateDots = (action: ActionName, val: number) => {
@@ -461,6 +485,183 @@ export function CharacterSheet({
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Street Contacts & Relations (1-100 Grading Scale & Ties) */}
+      <div className="p-4 rounded-lg bg-zinc-900/90 border border-zinc-800 flex flex-col gap-3 shadow">
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+          <span className="text-xs uppercase font-bold tracking-wider text-amber-400 flex items-center gap-1.5">
+            <Users className="w-4 h-4 text-amber-400" /> Street Contacts & Relations
+          </span>
+          <span className="text-xs text-zinc-400 font-mono">
+            {relations.length} {relations.length === 1 ? 'contact' : 'contacts'}
+          </span>
+        </div>
+
+        {relations.length === 0 ? (
+          <div className="p-4 text-center text-xs text-zinc-500 bg-zinc-950 rounded border border-zinc-800">
+            No contacts recorded for this scoundrel yet.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {relations.map((rel) => {
+              const npc = npcs.find((n) => n.id === rel.npc_id);
+              const affiliatedFaction = factions.find((f) => f.id === npc?.faction_id);
+              const tier = getScoreTier(rel.score);
+
+              return (
+                <div
+                  key={rel.id}
+                  className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 flex flex-col gap-2.5 transition-all hover:border-zinc-700"
+                >
+                  {/* NPC Header */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm text-zinc-100 flex items-center gap-1">
+                        {npc?.name || 'Street Contact'}
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                        {affiliatedFaction ? (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-zinc-800 text-amber-300 border border-zinc-700/80 flex items-center gap-1">
+                            <Shield className="w-2.5 h-2.5 text-amber-400" />
+                            {affiliatedFaction.name} (Tier {romanTier(affiliatedFaction.tier)})
+                          </span>
+                        ) : (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded text-zinc-500 bg-zinc-900 border border-zinc-800">
+                            Independent
+                          </span>
+                        )}
+                        {npc?.affiliation && (
+                          <span className="text-xs text-zinc-400">
+                            • {npc.affiliation}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Tier Pill */}
+                    <span className={`px-2 py-0.5 rounded border text-[11px] font-bold flex items-center gap-1 shrink-0 ${tier.color}`}>
+                      <span>{tier.icon}</span>
+                      <span>{tier.label}</span>
+                    </span>
+                  </div>
+
+                  {npc?.quirk && (
+                    <p className="text-[11px] text-zinc-400 italic bg-zinc-900/60 p-1.5 rounded border border-zinc-800/60">
+                      &ldquo;{npc.quirk}&rdquo;
+                    </p>
+                  )}
+
+                  {/* 1-100 Relationship Slider */}
+                  <div className="flex flex-col gap-1 mt-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-zinc-400 uppercase font-bold tracking-wider text-[10px]">
+                        Sentiment (1 = Foe, 100 = Friend)
+                      </span>
+                      <span className="font-mono font-bold text-amber-400">
+                        {rel.score} / 100
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={readOnly || rel.score <= 1}
+                        onClick={() =>
+                          onUpdateRelation &&
+                          onUpdateRelation({
+                            ...rel,
+                            score: Math.max(1, rel.score - 5),
+                            updated_at: new Date().toISOString()
+                          })
+                        }
+                        className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 text-xs text-zinc-300 font-mono"
+                        title="Decrease relation score by 5"
+                      >
+                        -5
+                      </button>
+
+                      <input
+                        type="range"
+                        min="1"
+                        max="100"
+                        value={rel.score}
+                        disabled={readOnly}
+                        onChange={(e) =>
+                          onUpdateRelation &&
+                          onUpdateRelation({
+                            ...rel,
+                            score: parseInt(e.target.value),
+                            updated_at: new Date().toISOString()
+                          })
+                        }
+                        className="flex-1 accent-amber-500 cursor-pointer h-1.5 bg-zinc-800 rounded-lg appearance-none"
+                      />
+
+                      <button
+                        type="button"
+                        disabled={readOnly || rel.score >= 100}
+                        onClick={() =>
+                          onUpdateRelation &&
+                          onUpdateRelation({
+                            ...rel,
+                            score: Math.min(100, rel.score + 5),
+                            updated_at: new Date().toISOString()
+                          })
+                        }
+                        className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 text-xs text-zinc-300 font-mono"
+                        title="Increase relation score by 5"
+                      >
+                        +5
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Narrative Notes */}
+                  <div className="flex flex-col gap-1.5 mt-1">
+                    <input
+                      type="text"
+                      placeholder="Public narrative note (shared with crew)..."
+                      value={rel.public_notes || ''}
+                      disabled={readOnly}
+                      onChange={(e) =>
+                        onUpdateRelation &&
+                        onUpdateRelation({
+                          ...rel,
+                          public_notes: e.target.value,
+                          updated_at: new Date().toISOString()
+                        })
+                      }
+                      className="bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-200 outline-none focus:border-amber-500"
+                    />
+
+                    {/* GM Secret Note */}
+                    {isGm && (
+                      <div className="flex items-center gap-1">
+                        <EyeOff className="w-3 h-3 text-purple-400 shrink-0" />
+                        <input
+                          type="text"
+                          placeholder="GM Secret plot hook note..."
+                          value={rel.private_notes || ''}
+                          disabled={readOnly}
+                          onChange={(e) =>
+                            onUpdateRelation &&
+                            onUpdateRelation({
+                              ...rel,
+                              private_notes: e.target.value,
+                              updated_at: new Date().toISOString()
+                            })
+                          }
+                          className="flex-1 bg-purple-950/40 border border-purple-800/60 rounded px-2 py-0.5 text-xs text-purple-200 outline-none focus:border-purple-500 font-mono"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Level-Up Modal */}

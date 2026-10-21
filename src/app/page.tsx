@@ -761,9 +761,16 @@ export default function Home() {
         {activeTab === 'character' && activeCharacter && (
           <CharacterSheet
             character={activeCharacter}
+            npcs={npcs}
+            factions={factions}
+            relations={characterRelations.filter((r) => r.character_id === activeCharacter.id)}
+            campaignLabels={campaignLabels}
             onUpdateCharacter={handleUpdateCharacter}
+            onUpdateRelation={handleUpdateRelation}
+            onCreateCampaignLabel={handleCreateCampaignLabel}
             onRollAction={handleRollAction}
             onRollResistance={handleRollResistance}
+            isGm={isGm}
             readOnly={false}
           />
         )}
