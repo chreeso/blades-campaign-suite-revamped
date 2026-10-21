@@ -177,6 +177,38 @@ export interface NPC {
   updated_at: string;
 }
 
+export type SystemRelationshipBadge =
+  | 'Mentor'
+  | 'Protégé'
+  | 'Debtor'
+  | 'Creditor'
+  | 'Lover'
+  | 'Family'
+  | 'Blackmailer'
+  | 'Former Partner'
+  | 'Confidant';
+
+export interface CampaignRelationshipLabel {
+  id: string;
+  campaign_id: string;
+  name: string;
+  color: string;
+  created_at: string;
+}
+
+export interface CharacterNpcRelation {
+  id: string;
+  campaign_id: string;
+  character_id: string;
+  npc_id: string;
+  score: number; // 1 to 100 (1=Arch-Enemy, 50=Neutral, 100=Devoted Friend)
+  badges: string[]; // SystemRelationshipBadge | CampaignRelationshipLabel.name
+  public_notes?: string;
+  private_notes?: string; // Secret / GM plot hooks
+  created_at: string;
+  updated_at: string;
+}
+
 export interface JournalEntry {
   id: string;
   campaign_id: string;

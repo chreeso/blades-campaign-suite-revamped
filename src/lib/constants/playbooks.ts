@@ -1,4 +1,23 @@
-import { ScoundrelPlaybook, CrewPlaybook, ActionName } from '@/types/blades';
+import { ScoundrelPlaybook, CrewPlaybook, ActionName, SystemRelationshipBadge } from '@/types/blades';
+
+export interface PlaybookContact {
+  name: string;
+  description: string;
+  suggestedFaction: string;
+  suggestedRole: string;
+}
+
+export const SYSTEM_RELATIONSHIP_BADGES: { name: SystemRelationshipBadge; description: string; color: string }[] = [
+  { name: 'Mentor', description: 'Guides and instructs you in the craft', color: 'blue' },
+  { name: 'Protégé', description: 'Looks up to you for guidance and training', color: 'cyan' },
+  { name: 'Debtor', description: 'Owes you coin, favors, or their life', color: 'emerald' },
+  { name: 'Creditor', description: 'You owe them heavy coin or dangerous favors', color: 'rose' },
+  { name: 'Lover', description: 'Romantic partner or intimate entanglement', color: 'pink' },
+  { name: 'Family', description: 'Blood relative or surrogate family tie', color: 'amber' },
+  { name: 'Blackmailer', description: 'Holds leverage or ruinous secrets over you', color: 'purple' },
+  { name: 'Former Partner', description: 'Past associate from old heists or crews', color: 'indigo' },
+  { name: 'Confidant', description: 'Knows your darkest vices and inner thoughts', color: 'teal' }
+];
 
 export interface PlaybookTemplate {
   name: ScoundrelPlaybook;
@@ -7,6 +26,7 @@ export interface PlaybookTemplate {
   defaultActions: Partial<Record<ActionName, number>>;
   specialAbilities: { name: string; description: string }[];
   uniqueInventory: { name: string; load: number; description?: string }[];
+  contacts: PlaybookContact[];
 }
 
 export const SCOUNDREL_PLAYBOOKS: Record<ScoundrelPlaybook, PlaybookTemplate> = {
@@ -31,6 +51,13 @@ export const SCOUNDREL_PLAYBOOKS: Record<ScoundrelPlaybook, PlaybookTemplate> = 
       { name: 'Scary weapon or armor', load: 2, description: 'Menacing spikes, barbed chain, or spiked carapace' },
       { name: 'Manacles & key', load: 0, description: 'Heavy steel cuffs' },
       { name: 'Rage essence vial', load: 0, description: 'Alchemical stimulant granting savage fury' }
+    ],
+    contacts: [
+      { name: 'Marlane', description: 'A pugilist', suggestedFaction: 'The Lampblacks', suggestedRole: 'Pit Fighter' },
+      { name: 'Chael', description: 'A vicious thug', suggestedFaction: 'The Billhooks', suggestedRole: 'Enforcer' },
+      { name: 'Mercy', description: 'A cold killer', suggestedFaction: 'The Silver Nails', suggestedRole: 'Contract Killer' },
+      { name: 'Grace', description: 'An extortionist', suggestedFaction: 'Dockers', suggestedRole: 'Extortionist' },
+      { name: 'Sawtooth', description: 'A physicker', suggestedFaction: 'Independent', suggestedRole: 'Underworld Surgeon' }
     ]
   },
   Hound: {
@@ -54,6 +81,13 @@ export const SCOUNDREL_PLAYBOOKS: Record<ScoundrelPlaybook, PlaybookTemplate> = 
       { name: 'Electroplasmic ammunition', load: 1, description: 'Rounds charged to harm ghosts and demons' },
       { name: 'Camouflage cloak', load: 1, description: 'Blends into city shadows or fog' },
       { name: 'Hunting hound', load: 0, description: 'Trained faithful hound' }
+    ],
+    contacts: [
+      { name: 'Flix', description: 'A fixer', suggestedFaction: 'The Silver Nails', suggestedRole: 'Contraband Fixer' },
+      { name: 'Celene', description: 'A sentinel', suggestedFaction: 'Bluecoats', suggestedRole: 'Rooftop Lookout' },
+      { name: 'Melvir', description: 'A physicker', suggestedFaction: 'The Crows', suggestedRole: 'Combat Medic' },
+      { name: 'Snuff', description: 'A pugilist', suggestedFaction: 'The Lampblacks', suggestedRole: 'Brawler' },
+      { name: 'Kennie', description: 'A hunter', suggestedFaction: 'Independent', suggestedRole: 'Deathlands Tracker' }
     ]
   },
   Leech: {
@@ -76,6 +110,13 @@ export const SCOUNDREL_PLAYBOOKS: Record<ScoundrelPlaybook, PlaybookTemplate> = 
       { name: 'Fine wrecking kit', load: 2, description: 'High-grade crowbars, wedges, and acids' },
       { name: 'Blowpipe & sleep darts', load: 0, description: 'Concealed bamboo or brass pipe' },
       { name: 'Bandolier of alchemicals', load: 1, description: '3 doses: Drift oil, Trance powder, Quicksilver' }
+    ],
+    contacts: [
+      { name: 'Stazia', description: 'An apothecary', suggestedFaction: 'Sparkwrights', suggestedRole: 'Chemist' },
+      { name: 'Veleris', description: 'A doctor', suggestedFaction: 'The Dimmer Sisters', suggestedRole: 'Occult Surgeon' },
+      { name: 'Eckerd', description: 'A corpse thief', suggestedFaction: 'Gondoliers', suggestedRole: 'Grave Robber' },
+      { name: 'Corik', description: 'A locksmith', suggestedFaction: 'Dockers', suggestedRole: 'Safe Artisan' },
+      { name: 'Malista', description: 'A priestess', suggestedFaction: 'Spirit Wardens', suggestedRole: 'Rogue Priestess' }
     ]
   },
   Lurk: {
@@ -99,6 +140,13 @@ export const SCOUNDREL_PLAYBOOKS: Record<ScoundrelPlaybook, PlaybookTemplate> = 
       { name: 'Light climbing gear', load: 1, description: 'Grapple hook, silk cord, spikes' },
       { name: 'Silence potion', load: 0, description: 'Eliminates footstep acoustics for minutes' },
       { name: 'Dark-sight goggles', load: 1, description: 'Lenses that pierce coal smog and blackout' }
+    ],
+    contacts: [
+      { name: 'Telda', description: 'A beggar', suggestedFaction: 'The Crows', suggestedRole: 'Street Informant' },
+      { name: 'Darmot', description: 'A bluecoat', suggestedFaction: 'Bluecoats', suggestedRole: 'Corrupt Watchman' },
+      { name: 'Frake', description: 'A locksmith', suggestedFaction: 'Dockers', suggestedRole: 'Locksmith' },
+      { name: 'Roslyn Kell', description: 'An info broker', suggestedFaction: 'The Crows', suggestedRole: 'Spymaster' },
+      { name: 'Petra', description: 'A thief', suggestedFaction: 'The Red Sashes', suggestedRole: 'Acrobatic Burglar' }
     ]
   },
   Slide: {
@@ -121,6 +169,13 @@ export const SCOUNDREL_PLAYBOOKS: Record<ScoundrelPlaybook, PlaybookTemplate> = 
       { name: 'Fine loaded dice & trick cards', load: 0, description: 'Weighted ivory dice and marked decks' },
       { name: 'Trance powder', load: 0, description: 'Subtle powder causing pliable confusion' },
       { name: 'Cane concealing a thin blade', load: 1, description: 'Ornate walking stick hiding razor steel' }
+    ],
+    contacts: [
+      { name: 'Bryl', description: 'A drug dealer', suggestedFaction: 'The Lampblacks', suggestedRole: 'Narcotics Merchant' },
+      { name: 'Bazso Baz', description: 'A gang leader', suggestedFaction: 'The Lampblacks', suggestedRole: 'Gang Boss' },
+      { name: 'Klyra', description: 'A tavern owner', suggestedFaction: 'Independent', suggestedRole: 'Publican' },
+      { name: 'Nyryx', description: 'A courtesan', suggestedFaction: 'The Red Sashes', suggestedRole: 'Courtesan' },
+      { name: 'Rolan Wycherley', description: 'A noble', suggestedFaction: 'City Council', suggestedRole: 'Aristocrat Politician' }
     ]
   },
   Spider: {
@@ -143,6 +198,13 @@ export const SCOUNDREL_PLAYBOOKS: Record<ScoundrelPlaybook, PlaybookTemplate> = 
       { name: 'Fine fountain pen & seals', load: 0, description: 'Official municipal inks and stamp crests' },
       { name: 'Pocket watch', load: 0, description: 'Gold-plated chronometer' },
       { name: 'Concealed poison ring', load: 0, description: 'Spring-loaded needle compartment' }
+    ],
+    contacts: [
+      { name: 'Salia', description: 'An info broker', suggestedFaction: 'The Crows', suggestedRole: 'Blackmail Broker' },
+      { name: 'Augus', description: 'A master architect', suggestedFaction: 'City Council', suggestedRole: 'Imperial Architect' },
+      { name: 'Klyra', description: 'A tavern owner', suggestedFaction: 'Independent', suggestedRole: 'Publican' },
+      { name: 'Arcy', description: 'A bluecoat', suggestedFaction: 'Inspectors', suggestedRole: 'Inspector' },
+      { name: 'Cole', description: 'A bookkeeper', suggestedFaction: 'Dockers', suggestedRole: 'Accountant' }
     ]
   },
   Whisper: {
@@ -166,6 +228,13 @@ export const SCOUNDREL_PLAYBOOKS: Record<ScoundrelPlaybook, PlaybookTemplate> = 
       { name: 'Ghost key', load: 0, description: 'Antique brass key opening spectral doorways' },
       { name: 'Spirit bottles (2)', load: 1, description: 'Vacuum glass jars to trap captured ghosts' },
       { name: 'Arcane talismans', load: 0, description: 'Inscribed bone wards against evil eyes' }
+    ],
+    contacts: [
+      { name: 'Nyryx', description: 'A ghost companion', suggestedFaction: 'The Dimmer Sisters', suggestedRole: 'Possessor Spirit' },
+      { name: 'Lord Scurlock', description: 'A vampire', suggestedFaction: 'Lord Scurlock', suggestedRole: 'Ancient Vampire' },
+      { name: 'Setarra', description: 'A demon', suggestedFaction: 'Independent', suggestedRole: 'Leviathan Demon' },
+      { name: 'Flint', description: 'A spirit merchant', suggestedFaction: 'The Dimmer Sisters', suggestedRole: 'Relic Peddler' },
+      { name: 'Quellyn', description: 'A witch', suggestedFaction: 'The Crows', suggestedRole: 'Deathlands Witch' }
     ]
   }
 };
