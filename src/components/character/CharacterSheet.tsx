@@ -367,57 +367,89 @@ export function CharacterSheet({
       {/* Action Ratings & Attribute XP */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {(Object.entries(ATTRIBUTES) as [AttributeName, typeof ATTRIBUTES[AttributeName]][]).map(
-          ([attrKey, attrData]) => (
+          ([attrKey, attrData]) => {
+            const attrRating = attrData.actions.filter((act) => (character.action_dots[act] || 0) > 0).length;
+
+            return (
             <div
               key={attrKey}
               className="p-4 rounded-lg bg-zinc-900/90 border border-zinc-800 flex flex-col gap-3 shadow"
             >
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2 flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm uppercase tracking-wider text-amber-400">
                     {attrData.label}
+                  </span>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full font-mono font-bold bg-amber-950/80 text-amber-300 border border-amber-800"
+                    title={`${attrData.label} Rating: ${attrRating}d (Dice pool for Resistance & Vice)`}
+                  >
+                    {attrRating}d
                   </span>
                   {onRollResistance && (
                     <button
                       type="button"
                       onClick={() => onRollResistance(attrKey)}
-                      className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-300 font-semibold uppercase tracking-wider"
-                      title={`Roll ${attrData.label} Resistance`}
+                      className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-300 font-semibold uppercase tracking-wider transition-colors"
+                      title={`Roll ${attrData.label} Resistance (${attrRating}d)`}
                     >
-                      <ShieldCheck className="w-3 h-3" /> Resist
+                      <ShieldCheck className="w-3 h-3" /> Resist ({attrRating}d)
                     </button>
                   )}
                 </div>
 
-                {/* 6 Attribute XP Boxes */}
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-zinc-500 uppercase font-mono mr-1">XP</span>
-                  {Array.from({ length: 6 }, (_, i) => {
-                    const boxNum = i + 1;
-                    const isMarked = boxNum <= character[attrData.xpKey];
-                    return (
-                      <button
-                        key={boxNum}
-                        type="button"
-                        disabled={readOnly}
-                        onClick={() =>
-                          updateAttributeXp(
-                            attrData.xpKey,
-                            boxNum === character[attrData.xpKey] ? boxNum - 1 : boxNum
-                          )
-                        }
-                        className={`w-3 h-3 rounded-xs border transition-all ${
-                          isMarked
-                            ? 'bg-amber-400 border-amber-300'
-                            : 'bg-zinc-950 border-zinc-700 hover:border-zinc-500'
-                        }`}
-                      />
-                    );
-                  })}
+                {/* 6 Attribute XP Boxes & Advance Button */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-zinc-500 uppercase font-mono mr-1">XP</span>
+                    {Array.from({ length: 6 }, (_, i) => {
+                      const boxNum = i + 1;
+                      const isMarked = boxNum <= character[attrData.xpKey];
+                      return (
+                        <button
+                          key={boxNum}
+                          type="button"
+                          disabled={readOnly}
+                          onClick={() => {
+                            const nextXp = boxNum === character[attrData.xpKey] ? boxNum - 1 : boxNum;
+                            updateAttributeXp(attrData.xpKey, nextXp);
+                            if (nextXp >= 6) {
+                              setAdvancingAttribute(attrKey);
+                            }
+                          }}
+                          className={`w-3.5 h-3.5 rounded-xs border transition-all ${
+                            isMarked
+                              ? 'bg-amber-400 border-amber-300 shadow-[0_0_6px_rgba(251,191,36,0.5)]'
+                              : 'bg-zinc-950 border-zinc-700 hover:border-zinc-500'
+                          }`}
+                          title={`Mark ${boxNum} XP in ${attrData.label}`}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => setAdvancingAttribute(attrKey)}
+                      disabled={character[attrData.xpKey] < 6}
+                      className={`text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider shadow transition-all flex items-center gap-1 ${
+                        character[attrData.xpKey] >= 6
+                          ? 'bg-amber-500 hover:bg-amber-400 text-black animate-pulse cursor-pointer shadow-[0_0_8px_rgba(245,158,11,0.5)]'
+                          : 'bg-zinc-800 text-zinc-500 opacity-40 cursor-not-allowed border border-zinc-700'
+                      }`}
+                      title={
+                        character[attrData.xpKey] >= 6
+                          ? `Advance ${attrData.label} (spend 6 XP)`
+                          : `Requires 6 XP to advance (currently ${character[attrData.xpKey]}/6)`
+                      }
+                    >
+                      <Sparkles className="w-3 h-3" /> Advance
+                    </button>
+                  )}
                 </div>
               </div>
-
-              {/* Actions in this attribute */}
+{/* Actions in this attribute */}
               <div className="flex flex-col gap-1">
                 {attrData.actions.map((act) => {
                   const dots = character.action_dots[act] || 0;
@@ -462,8 +494,8 @@ export function CharacterSheet({
                 })}
               </div>
             </div>
-          )
-        )}
+          );
+        })}
       </div>
 
       {/* Economy & Loadout Row */}
