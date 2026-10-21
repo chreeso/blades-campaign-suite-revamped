@@ -68,6 +68,7 @@ export function CharacterSheet({
 }: CharacterSheetProps) {
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [advancingAttribute, setAdvancingAttribute] = useState<AttributeName | null>(null);
   const [managingBadgesRelId, setManagingBadgesRelId] = useState<string | null>(null);
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('amber');
@@ -217,10 +218,39 @@ export function CharacterSheet({
     onUpdateCharacter({
       ...character,
       special_abilities: updated,
-      playbook_xp: 0, // Reset XP upon leveling up
+      playbook_xp: Math.max(0, character.playbook_xp - 8),
       updated_at: new Date().toISOString()
     });
     setShowLevelUpModal(false);
+  };
+
+  const advanceAttributeAction = (action: ActionName) => {
+    if (!advancingAttribute) return;
+    const currentDots = character.action_dots[action] || 0;
+    if (currentDots >= 4) return;
+    const xpKey = ATTRIBUTES[advancingAttribute].xpKey;
+    onUpdateCharacter({
+      ...character,
+      action_dots: {
+        ...character.action_dots,
+        [action]: currentDots + 1
+      },
+      [xpKey]: Math.max(0, character[xpKey] - 6),
+      updated_at: new Date().toISOString()
+    });
+    setAdvancingAttribute(null);
+  };
+
+  const toggleAbilityManual = (abilityName: string) => {
+    if (!isEditMode) return;
+    const updated = character.special_abilities.map((ab) =>
+      ab.name === abilityName ? { ...ab, unlocked: !ab.unlocked } : ab
+    );
+    onUpdateCharacter({
+      ...character,
+      special_abilities: updated,
+      updated_at: new Date().toISOString()
+    });
   };
 
   // Current equipped load calculation
@@ -941,6 +971,84 @@ export function CharacterSheet({
           </div>
         );
       })()}
+
+      {/* Attribute Advancement Modal */}
+      {advancingAttribute && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md bg-zinc-900 border border-amber-500 rounded-xl p-5 shadow-2xl flex flex-col gap-4 text-zinc-100">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+              <h3 className="font-serif text-base font-bold text-amber-400 flex items-center gap-2">
+                <Award className="w-5 h-5 text-amber-400" /> {ATTRIBUTES[advancingAttribute].label} Advancement
+              </h3>
+              <button
+                type="button"
+                onClick={() => setAdvancingAttribute(null)}
+                className="text-xs text-zinc-400 hover:text-zinc-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-300">
+              You have accumulated 6 {ATTRIBUTES[advancingAttribute].label} XP! Choose an action within {ATTRIBUTES[advancingAttribute].label} to advance by +1 dot (max 4):
+            </p>
+
+            <div className="flex flex-col gap-2">
+              {ATTRIBUTES[advancingAttribute].actions.map((act) => {
+                const currentDots = character.action_dots[act] || 0;
+                const isMax = currentDots >= 4;
+
+                return (
+                  <button
+                    key={act}
+                    disabled={isMax}
+                    onClick={() => advanceAttributeAction(act)}
+                    className="p-3 rounded-lg bg-zinc-950 hover:bg-amber-950/40 border border-zinc-800 hover:border-amber-500 transition-all flex items-center justify-between disabled:opacity-40 disabled:cursor-not-allowed group text-left"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold capitalize text-zinc-200 group-hover:text-amber-400">
+                        {act}
+                      </span>
+                      <span className="text-[11px] text-zinc-500">
+                        Current rating: {currentDots} / 4 dots
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 4 }, (_, i) => (
+                          <div
+                            key={i}
+                            className={`w-2.5 h-2.5 rounded-xs border ${
+                              i < currentDots
+                                ? 'bg-amber-400 border-amber-300'
+                                : i === currentDots
+                                ? 'bg-amber-500/30 border-dashed border-amber-400 animate-pulse'
+                                : 'bg-zinc-900 border-zinc-700'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs font-bold text-amber-400 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/30 group-hover:bg-amber-500 group-hover:text-black transition-colors">
+                        {isMax ? 'Maxed' : '+1 Dot'}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setAdvancingAttribute(null)}
+                className="px-3 py-1.5 text-xs rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Level-Up Modal */}
       {showLevelUpModal && (
