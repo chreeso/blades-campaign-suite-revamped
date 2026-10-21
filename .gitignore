@@ -44,3 +44,6 @@ next-env.d.ts
 # graphify
 .graphify/
 graphify-out/
+
+# archive
+/archive/

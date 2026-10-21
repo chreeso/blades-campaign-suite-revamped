@@ -55,7 +55,7 @@ The directory [`.agent/knowledge/`](file:///.agent/knowledge/) contains determin
 | **GM Faction Tracker & NPC Webs**| [`factions_and_doskvol.md`](file:///.agent/knowledge/factions_and_doskvol.md) | `supabase-architecture`, `ui-components` |
 | **Multi-Campaign Switching & Auth** | [`supabase-architecture/SKILL.md`](file:///.agent/skills/supabase-architecture/SKILL.md) | `supabase-architecture` |
 | **Feature Sprints & Releases** | [Sprint Plan Template](file:///.agent/skills/sprint-lifecycle/templates/sprint_plan_template.md) | `sprint-lifecycle` |
-| **SRD Roadmap & Phased Progress** | [`ROADMAP.md`](file:///ROADMAP.md) | `blades-rules`, `sprint-lifecycle` |
+| **SRD Roadmap & Master Backlog** | [Master Backlog Artifact](file:///C:/Users/chri/.gemini/antigravity/brain/4ef8bc55-b782-4195-9aa3-d3df2bbe641e/backlog.md) | `blades-rules`, `sprint-lifecycle` |
 
 ---
 
