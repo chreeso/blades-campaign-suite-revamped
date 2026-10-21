@@ -21,6 +21,7 @@ import { SCOUNDREL_PLAYBOOKS } from '@/lib/constants/playbooks';
 import { CampaignSwitcher } from '@/components/ui/CampaignSwitcher';
 import { CharacterSheet } from '@/components/character/CharacterSheet';
 import { CharacterCreator, CharacterContactSelection } from '@/components/character/CharacterCreator';
+import { QuickNpcModal, QuickNpcSubmitData } from '@/components/campaign/QuickNpcModal';
 import { ClocksManager } from '@/components/campaign/ClocksManager';
 import { FactionsTracker } from '@/components/campaign/FactionsTracker';
 import { NpcTracker } from '@/components/campaign/NpcTracker';
@@ -42,7 +43,8 @@ import {
   Dices,
   Hourglass,
   Server,
-  UserPlus
+  UserPlus,
+  UserCheck
 } from 'lucide-react';
 
 // Baseline initial data
@@ -344,6 +346,7 @@ export default function Home() {
   // Auth & Invite Modals State
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showQuickNpcModal, setShowQuickNpcModal] = useState(false);
 
   // Live Supabase Realtime Sync
   const { syncStatus, broadcastChange } = useCampaignSync({
@@ -579,6 +582,59 @@ export default function Home() {
     setNpcs((prev) => prev.filter((n) => n.id !== npcId));
   };
 
+  // Quick Mid-Session NPC Creator
+  const handleQuickNpcSubmit = (data: QuickNpcSubmitData) => {
+    let targetFactionId = data.factionId;
+
+    if (data.newFactionName) {
+      const newFac: Faction = {
+        id: `fac_${Date.now()}`,
+        campaign_id: activeCampaignId,
+        name: data.newFactionName,
+        tier: 1,
+        hold: 'Strong',
+        status: 0,
+        description: 'Street faction encountered during campaign score',
+        visibility: 'campaign_public',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      setFactions((prev) => [...prev, newFac]);
+      targetFactionId = newFac.id;
+    }
+
+    const newNpc: NPC = {
+      id: `npc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      campaign_id: activeCampaignId,
+      name: data.name,
+      faction_id: targetFactionId,
+      affiliation: data.role,
+      quirk: data.quirk,
+      visibility: data.visibility,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setNpcs((prev) => [newNpc, ...prev]);
+
+    if (data.relation) {
+      const newRel: CharacterNpcRelation = {
+        id: `rel_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        campaign_id: activeCampaignId,
+        character_id: data.relation.characterId,
+        npc_id: newNpc.id,
+        score: data.relation.score,
+        badges: data.relation.badges,
+        public_notes: data.relation.publicNotes,
+        private_notes: data.relation.privateNotes,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      setCharacterRelations((prev) => [...prev, newRel]);
+    }
+
+    setShowQuickNpcModal(false);
+  };
+
   // Journal & Transactions
   const handleAddJournalEntry = (entryData: Omit<JournalEntry, 'id' | 'created_at' | 'updated_at'>) => {
     const newEntry: JournalEntry = {
@@ -621,6 +677,15 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Quick Add NPC Button */}
+            <button
+              onClick={() => setShowQuickNpcModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/50 hover:bg-amber-500/30 text-xs text-amber-300 font-semibold transition-all shadow-xs"
+              title="Quick-create an NPC or street contact mid-session"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-amber-400" /> + NPC
+            </button>
+
             {/* Invite Button */}
             <button
               onClick={() => setShowInviteModal(true)}
@@ -886,6 +951,19 @@ export default function Home() {
           campaign={campaigns.find((c) => c.id === activeCampaignId) || campaigns[0]}
           onJoinByCode={handleJoinByCode}
           onClose={() => setShowInviteModal(false)}
+        />
+      )}
+
+      {/* Quick Mid-Session NPC Modal */}
+      {showQuickNpcModal && (
+        <QuickNpcModal
+          factions={factions}
+          characters={characters}
+          campaignLabels={campaignLabels}
+          preselectedCharacterId={userRole === 'player' ? activeCharacterId : undefined}
+          isGm={isGm}
+          onSubmit={handleQuickNpcSubmit}
+          onClose={() => setShowQuickNpcModal(false)}
         />
       )}
     </div>
