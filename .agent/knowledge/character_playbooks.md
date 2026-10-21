@@ -138,3 +138,34 @@ Every player answers 3 end-of-session trigger categories:
 2. Did you express your beliefs, drives, heritage, or background? (Mark 1 or 2 XP).
 3. Did you struggle with issues from your vice or traumas? (Mark 1 or 2 XP).
 *Player allocates marked session XP to their Playbook track or any Attribute track.*
+
+---
+
+## 4. Playbook Contacts & Street Relations Engine
+
+### Character Creation Invariant (Strict Rule)
+Every Scoundrel at creation must select:
+* **1 Close Friend** (▲): Marked contact initializes relationship score to **85**.
+* **1 Rival / Foe** (▼): Marked contact initializes relationship score to **15**.
+* **Neutral Contacts**: Other playbook or street contacts default to **50**.
+
+### Official SRD Contacts by Playbook
+1. **Cutter**: Marlane (pugilist), Chael (thug), Mercy (cold killer), Grace (extortionist), Sawtooth (physicker).
+2. **Hound**: Flix (fixer), Celene (sentinel), Melvir (physicker), Snuff (pugilist), Kennie (hunter).
+3. **Leech**: Stazia (apothecary), Veleris (doctor), Eckerd (corpse thief), Corik (locksmith), Malista (priestess).
+4. **Lurk**: Telda (beggar), Darmot (bluecoat), Frake (locksmith), Roslyn Kell (info broker), Petra (thief).
+5. **Slide**: Bryl (drug dealer), Bazso Baz (gang leader), Klyra (tavern owner), Nyryx (courtesan), Rolan Wycherley (noble).
+6. **Spider**: Salia (info broker), Augus (master architect), Klyra (tavern owner), Arcy (bluecoat/inspector), Cole (bookkeeper).
+7. **Whisper**: Nyryx (ghost companion), Lord Scurlock (vampire), Setarra (demon), Flint (spirit merchant), Quellyn (witch).
+
+### 1–100 Relationship Sentiment Scale
+* **1–20**: Bitter Foe / Arch-Enemy
+* **21–40**: Rival / Adversary
+* **41–60**: Neutral / Acquaintance
+* **61–80**: Ally / Friendly Contact
+* **81–100**: Devoted Friend / Close Confidant
+
+### Badges & Labels System
+* **Systemwide Badges**: `Mentor`, `Protégé`, `Debtor`, `Creditor`, `Lover`, `Family`, `Blackmailer`, `Former Partner`, `Confidant`.
+* **Campaign-Exclusive Labels**: Dynamically created per campaign to track unique faction compacts, blood oaths, and score debts.
+* **Faction Affiliation**: Each contact/NPC links directly to a campaign Faction (`faction_id`) with a specified role or title within that organization, or can be designated Independent.

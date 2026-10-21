@@ -68,3 +68,10 @@ Relationships between factions (and between the Crew and NPC factions) are track
 * Every campaign cycle (usually between scores or during downtime), the GM advances **Faction Clocks**.
 * Each active faction advances 1 clock tick (or rolls Fortune: 1-3 = 0 ticks, 4/5 = 1 tick, 6 = 2 ticks, Crit = 3 ticks).
 * When a faction clock fills, the faction's status, hold, or territory changes, generating ripples for the player crew.
+
+---
+
+## 5. NPCs, Faction Affiliations & Scoundrel Ties
+* **Faction Membership**: Each NPC can be linked to a campaign Faction (`faction_id`) with a defined rank or role (e.g. Leader, Lieutenant, Enforcer, Fence) or designated as Independent.
+* **1:N Multi-Player Ties**: Any NPC can hold distinct relationship scores (1–100) and badges with multiple player characters simultaneously.
+* **Open Table Visibility**: Relationships are public to the table by default with optional secret GM/player plot notes.
