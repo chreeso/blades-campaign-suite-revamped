@@ -2,21 +2,27 @@
 
 import React from 'react';
 import { HarmState, ArmorState } from '@/types/blades';
-import { Shield, ShieldAlert, HeartPulse } from 'lucide-react';
+import { Shield, ShieldAlert, HeartPulse, Sparkles } from 'lucide-react';
 
 interface HarmMatrixProps {
   harm: HarmState;
   armor: ArmorState;
+  healingClock?: number;
   onUpdateHarm: (newHarm: HarmState) => void;
   onUpdateArmor: (newArmor: ArmorState) => void;
+  onUpdateHealingClock?: (newClock: number) => void;
+  onApplyHealing?: () => void;
   readOnly?: boolean;
 }
 
 export function HarmMatrix({
   harm,
   armor,
+  healingClock = 0,
   onUpdateHarm,
   onUpdateArmor,
+  onUpdateHealingClock,
+  onApplyHealing,
   readOnly = false
 }: HarmMatrixProps) {
   const handleLevel1Change = (index: 0 | 1, value: string) => {
@@ -42,6 +48,7 @@ export function HarmMatrix({
 
   const hasLevel2Harm = Boolean(harm.level2[0] || harm.level2[1]);
   const hasLevel3Harm = Boolean(harm.level3);
+  const hasAnyHarm = Boolean(harm.level1[0] || harm.level1[1] || hasLevel2Harm || hasLevel3Harm);
 
   return (
     <div className="p-4 bg-zinc-900/90 rounded-lg border border-zinc-800 text-zinc-100 flex flex-col gap-3">
@@ -174,6 +181,59 @@ export function HarmMatrix({
           </span>
         </div>
       )}
+
+      {/* Healing / Recovery 4-Segment Linear Clock */}
+      <div className="pt-2 border-t border-zinc-800/80 flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+              Healing Clock [{healingClock} / 4]
+            </span>
+          </div>
+          {hasAnyHarm && onApplyHealing && (
+            <button
+              type="button"
+              disabled={readOnly}
+              onClick={onApplyHealing}
+              className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-700/60 text-emerald-300 hover:bg-emerald-900/60 transition-all"
+              title="Manually trigger harm downgrade (reduces all harm by 1 level)"
+            >
+              Heal 1 Level (Clear Clock)
+            </button>
+          )}
+        </div>
+
+        {/* 4 Linear Clock Segments */}
+        <div className="grid grid-cols-4 gap-1.5 h-6">
+          {[1, 2, 3, 4].map((seg) => {
+            const isFilled = seg <= healingClock;
+            return (
+              <button
+                key={seg}
+                type="button"
+                disabled={readOnly || !onUpdateHealingClock}
+                onClick={() => {
+                  if (onUpdateHealingClock) {
+                    onUpdateHealingClock(seg === healingClock ? seg - 1 : seg);
+                  }
+                }}
+                className={`rounded border transition-all flex items-center justify-center font-mono text-[10px] ${
+                  isFilled
+                    ? 'bg-emerald-500 border-emerald-400 text-black font-bold shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+                    : 'bg-zinc-950 border-zinc-800 text-zinc-600 hover:border-zinc-700'
+                }`}
+                title={`Segment ${seg}/4 of Healing project`}
+              >
+                {seg}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-zinc-500 italic">
+          Advance during Downtime via <strong>Recover</strong> (Physicker or Tinker). When filled, all harm downgrades 1 tier.
+        </p>
+      </div>
     </div>
   );
 }

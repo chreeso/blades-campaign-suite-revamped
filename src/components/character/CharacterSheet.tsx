@@ -7,6 +7,7 @@ import { ScoundrelPlaybook } from '@/types/blades';
 import { DotRating } from '@/components/ui/DotRating';
 import { StressBar } from '@/components/ui/StressBar';
 import { HarmMatrix } from '@/components/ui/HarmMatrix';
+import { cascadeHarmReduction } from '@/lib/downtime';
 import { Coins, Sparkles, Backpack, Award, ArrowRight, ArrowLeft, Dices, ShieldCheck, Users, Shield, Plus, Tag, EyeOff, Check, UserPlus, Link2, Pencil, AlertTriangle } from 'lucide-react';
 import { QuickNpcModal, QuickNpcSubmitData } from '@/components/campaign/QuickNpcModal';
 
@@ -366,8 +367,35 @@ export function CharacterSheet({
         <HarmMatrix
           harm={character.harm}
           armor={character.armor_used}
+          healingClock={character.healing_clock ?? 0}
           onUpdateHarm={(h) => onUpdateCharacter({ ...character, harm: h })}
           onUpdateArmor={(a) => onUpdateCharacter({ ...character, armor_used: a })}
+          onUpdateHealingClock={(c) => {
+            if (c >= 4) {
+              const newHarm = cascadeHarmReduction(character.harm);
+              onUpdateCharacter({
+                ...character,
+                healing_clock: c % 4,
+                harm: newHarm,
+                updated_at: new Date().toISOString()
+              });
+            } else {
+              onUpdateCharacter({
+                ...character,
+                healing_clock: Math.max(0, Math.min(4, c)),
+                updated_at: new Date().toISOString()
+              });
+            }
+          }}
+          onApplyHealing={() => {
+            const newHarm = cascadeHarmReduction(character.harm);
+            onUpdateCharacter({
+              ...character,
+              healing_clock: 0,
+              harm: newHarm,
+              updated_at: new Date().toISOString()
+            });
+          }}
           readOnly={readOnly}
         />
       </div>
