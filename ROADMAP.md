@@ -20,9 +20,9 @@
 | **Crew XP & Advancements** | 8-box Crew XP track with playbook triggers. Marks unlock Crew Special Abilities or 2 Upgrades. | Fully implemented in [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx) with advancement triggers. | **Compliant** |
 | **Crew Special Abilities** | Each Crew playbook has unique special abilities that can be taken at advancement. | Modeled in [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx) and [`playbooks.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/constants/playbooks.ts). | **Compliant** |
 | **Cohorts (Gangs & Experts)** | Crews recruit Gangs or Experts with Quality (Tier), Scale, Edges (Fearsome, Loyal), Flaws (Savage, Unreliable), and Cohort Harm. | Modeled in [`CohortCard.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CohortCard.tsx) and [`CrewSheet.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/CrewSheet.tsx). | **Compliant** |
-| **Teamwork Maneuvers** | 4 maneuvers: Assist (+1d / 1 stress), Lead Group Action (leader takes 1 stress per fail), Protect Teammate, Set Up (+1 effect/position). | Assist is an unlinked checkbox; Group Action, Protect, and Set Up have no tracking or sheet sync. | **Lacking (Phase 3)** |
-| **End of Session XP** | Review 3 prompts (playbook trigger, beliefs/heritage, vice/trauma struggle) to award 1–2 XP each. | Scoundrel sheets track XP tracks, but lack the end-of-session prompt wizard. | **Lacking (Phase 3)** |
-| **Incarceration Roll** | When Wanted Level hits 4 or a PC is arrested to purge Heat, roll Incarceration for prison claims, faction standing, and sentence. | Currently Wanted level rolls over, but has no incarceration event trigger or Ironhook sub-mechanic. | **Missing (Phase 3)** |
+| **Teamwork Maneuvers** | 4 maneuvers: Assist (+1d / 1 stress), Lead Group Action (leader takes 1 stress per fail), Protect Teammate, Set Up (+1 effect/position). | Fully implemented in [`DiceRoller.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/roller/DiceRoller.tsx) and [`roller.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/roller.ts). | **Compliant** |
+| **End of Session XP** | Review 3 prompts (playbook trigger, beliefs/heritage, vice/trauma struggle) to award 1–2 XP each. | Fully modeled in [`EndOfSessionModal.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/EndOfSessionModal.tsx) with Scoundrel and Crew tracks. | **Compliant** |
+| **Incarceration Roll** | When Wanted Level hits 4 or a PC is arrested to purge Heat, roll Incarceration for prison claims, faction standing, and sentence. | Fully modeled in [`IncarcerationModal.tsx`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/components/campaign/IncarcerationModal.tsx) and [`roller.ts`](file:///c:/Users/chri/Source/blades-campaign-suite-revamped/src/lib/roller.ts). | **Compliant** |
 
 ---
 
@@ -151,21 +151,21 @@ flowchart TD
 ### Phase 3: Teamwork, Session Cadence & Prison
 *Goal: Facilitate group play mechanics and long-term narrative consequences.*
 
-- [ ] **3.1 Teamwork Maneuver Engine**
-  - [ ] **Lead a Group Action**: GM selects participating scoundrels; rolls all pools simultaneously; leader automatically incurs 1 stress per participant who rolled 1–3.
-  - [ ] **Protect a Teammate**: Prompts a resistance roll to absorb or negate an ally's consequence.
-  - [ ] **Setup Action**: Grants next player +1 effect or +1 position level on success.
+- [x] **3.1 Teamwork Maneuver Engine**
+  - [x] **Lead a Group Action**: GM selects participating scoundrels; rolls all pools simultaneously; leader automatically incurs 1 stress per participant who rolled 1–3.
+  - [x] **Protect a Teammate**: Prompts a resistance roll to absorb or negate an ally's consequence.
+  - [x] **Setup Action**: Grants next player +1 effect or +1 position level on success.
 
-- [ ] **3.2 End-of-Session XP Wizard**
-  - [ ] Interactive modal guiding scoundrels through the 3 end-of-session questions:
+- [x] **3.2 End-of-Session XP Wizard**
+  - [x] Interactive modal guiding scoundrels through the 3 end-of-session questions:
     - *Did you express your beliefs, drives, heritage, or background?*
     - *Did you struggle with issues from your vice or traumas?*
     - *Did you address challenges with your playbook-specific style?*
-  - [ ] Allocate 1 or 2 XP to playbook or attribute tracks upon submission.
+  - [x] Allocate 1 or 2 XP to playbook or attribute tracks upon submission.
 
-- [ ] **3.3 Incarceration & Ironhook Prison Subsystem**
-  - [ ] Incarceration roll upon hitting Wanted Level 4 or serving time to clear Heat.
-  - [ ] Incarceration outcomes: prison claims, prison faction status, and sentence length.
+- [x] **3.3 Incarceration & Ironhook Prison Subsystem**
+  - [x] Incarceration roll upon hitting Wanted Level 4 or serving time to clear Heat.
+  - [x] Incarceration outcomes: prison claims, prison faction status, and sentence length.
 
 ---
 
