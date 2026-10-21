@@ -18,8 +18,12 @@ import {
   rollEntanglement,
   resolveViceRoll,
   resolveReduceHeatRoll,
+  resolveRecoveryRoll,
+  advanceHealingClock,
+  cascadeHarmReduction,
   EntanglementRollResult,
-  ViceRollResult
+  ViceRollResult,
+  RecoveryRollResult
 } from '@/lib/downtime';
 import {
   Hourglass,
@@ -126,6 +130,12 @@ export function DowntimeWizard({
   // Activity 2: Reduce Heat
   const [reduceHeatRoll, setReduceHeatRoll] = useState<{ dice: number[]; heatCleared: number } | null>(null);
 
+  // Activity: Recovery & Healing
+  const [recoverySource, setRecoverySource] = useState<'physicker' | 'tinker'>('physicker');
+  const [physickerQuality, setPhysickerQuality] = useState(2);
+  const [recoveryRoll, setRecoveryRoll] = useState<RecoveryRollResult | null>(null);
+  const [harmDowngradedEvent, setHarmDowngradedEvent] = useState(false);
+
   // Calculate lowest attribute dots for Vice roll
   const getLowestAttrDots = () => {
     const attrCounts: Record<AttributeName, number> = { insight: 0, prowess: 0, resolve: 0 };
@@ -188,17 +198,48 @@ export function DowntimeWizard({
     setActivitiesLog((prev) => [...prev, `Trained: +1 XP marked in ${track.replace('_', ' ')}`]);
   };
 
-  const handleHealClock = () => {
-    // Healing clock: advance by 2 segments
-    setWorkingClocks((prev) =>
-      prev.map((c) =>
-        c.name.toLowerCase().includes('heal') || c.clock_type === 'project'
-          ? { ...c, current_segments: Math.min(c.max_segments, c.current_segments + 2) }
-          : c
-      )
+  const handleRecover = () => {
+    let pool = physickerQuality;
+    let stressCost = 0;
+
+    if (recoverySource === 'tinker') {
+      pool = workingChar.action_dots['tinker'] || 0;
+      // In RAW p. 155: Self-treatment with Level 3 harm requires 2 stress to act while incapacitated!
+      if (workingChar.harm.level3) {
+        stressCost = 2;
+      }
+    }
+
+    const res = resolveRecoveryRoll(pool);
+    setRecoveryRoll(res);
+
+    const advanceRes = advanceHealingClock(
+      workingChar.healing_clock ?? 0,
+      res.ticks,
+      workingChar.harm
     );
+
+    setHarmDowngradedEvent(advanceRes.harmReduced);
+
+    setWorkingChar((prev) => ({
+      ...prev,
+      stress: Math.min(9, prev.stress + stressCost),
+      healing_clock: advanceRes.newClock,
+      harm: advanceRes.newHarm
+    }));
+
     setActivitiesUsed((prev) => prev + 1);
-    setActivitiesLog((prev) => [...prev, `Recovery: Advanced healing / recovery clock (+2 ticks)`]);
+    const sourceLabel =
+      recoverySource === 'physicker'
+        ? `Physicker (Quality ${physickerQuality}d)`
+        : `Self-Treatment (Tinker ${pool}d${stressCost > 0 ? ', +2 stress for L3 harm' : ''})`;
+
+    setActivitiesLog((prev) => [
+      ...prev,
+      `Recovered via ${sourceLabel}: rolled [${res.dice.join(', ')}] -> ${res.ticks} tick(s) marked${
+        advanceRes.harmReduced ? ' [HARM DOWNGRADED!]' : ''
+      }`
+    ]);
   };
 
   // STEP 5: Final Commit
@@ -586,23 +627,119 @@ ${activitiesLog.map((log) => `  - ${log}`).join('\n')}`;
               </div>
 
               {/* Activity 2: Recovery / Healing */}
-              <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 flex flex-col justify-between gap-2">
-                <div>
+              <div className="p-3.5 rounded-lg bg-zinc-950 border border-zinc-800 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-red-400 flex items-center gap-1.5">
-                    <HeartPulse className="w-3.5 h-3.5" /> Recover (Healing Clock)
+                    <HeartPulse className="w-3.5 h-3.5 text-red-400" /> Recover & Treat Harm
                   </span>
-                  <p className="text-[11px] text-zinc-400 mt-1">
-                    Work with a physicker to treat wounds and advance recovery projects (+2 segments).
-                  </p>
+                  <span className="font-mono text-xs font-bold text-emerald-400">
+                    Healing: [{workingChar.healing_clock ?? 0} / 4]
+                  </span>
                 </div>
 
+                <p className="text-[11px] text-zinc-400">
+                  Seek medical treatment or electroplasmic surgery. When the 4-segment clock fills, each harm level drops by 1 tier.
+                </p>
+
+                {/* 4-Segment Linear Healing Bar */}
+                <div className="grid grid-cols-4 gap-1.5 h-4">
+                  {[1, 2, 3, 4].map((seg) => {
+                    const isFilled = seg <= (workingChar.healing_clock ?? 0);
+                    return (
+                      <div
+                        key={seg}
+                        className={`rounded transition-all ${
+                          isFilled
+                            ? 'bg-emerald-500 border border-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)]'
+                            : 'bg-zinc-900 border border-zinc-800'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Treatment Source Selector */}
+                <div className="flex flex-col gap-1.5 pt-1 border-t border-zinc-900">
+                  <span className="text-[10px] uppercase font-bold text-zinc-400">Treatment Source:</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRecoverySource('physicker')}
+                      className={`py-1.5 px-2 rounded-md text-xs font-semibold border transition-all ${
+                        recoverySource === 'physicker'
+                          ? 'bg-emerald-950/80 border-emerald-600 text-emerald-300'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      Physicker ({physickerQuality}d)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecoverySource('tinker')}
+                      className={`py-1.5 px-2 rounded-md text-xs font-semibold border transition-all ${
+                        recoverySource === 'tinker'
+                          ? 'bg-amber-950/80 border-amber-600 text-amber-300'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      Self / Tinker ({workingChar.action_dots['tinker'] || 0}d)
+                    </button>
+                  </div>
+
+                  {recoverySource === 'physicker' && (
+                    <div className="flex items-center justify-between text-xs text-zinc-400 mt-1 px-1">
+                      <span>Physicker Quality:</span>
+                      <select
+                        value={physickerQuality}
+                        onChange={(e) => setPhysickerQuality(Number(e.target.value))}
+                        className="bg-zinc-900 border border-zinc-700 rounded px-1.5 py-0.5 text-xs text-zinc-200 outline-none"
+                      >
+                        <option value={1}>1d (Street apothecary)</option>
+                        <option value={2}>2d (Standard physicker)</option>
+                        <option value={3}>3d (Fine physician)</option>
+                        <option value={4}>4d (Master surgeon)</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {recoverySource === 'tinker' && workingChar.harm.level3 && (
+                    <div className="p-1.5 rounded bg-red-950/40 border border-red-900/60 text-[10px] text-red-300 mt-1">
+                      ⚠️ Level 3 Harm: Self-treatment costs <strong>2 stress</strong> to push through the agony.
+                    </div>
+                  )}
+                </div>
+
+                {/* Roll Trigger */}
                 <button
                   type="button"
-                  onClick={handleHealClock}
-                  className="py-1.5 px-3 rounded bg-red-950/40 hover:bg-red-900/50 border border-red-800 text-red-300 text-xs font-semibold"
+                  onClick={handleRecover}
+                  className="py-1.5 px-3 rounded bg-red-950/80 hover:bg-red-900 border border-red-700 text-red-200 text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5"
                 >
-                  Advance Healing Clock (+2)
+                  <Dices className="w-3.5 h-3.5 text-red-400" />
+                  Roll Recovery ({recoverySource === 'physicker' ? `${physickerQuality}d` : `${workingChar.action_dots['tinker'] || 0}d`})
                 </button>
+
+                {/* Roll Results Banner */}
+                {recoveryRoll && (
+                  <div className="p-2.5 rounded bg-zinc-900 border border-zinc-800 flex flex-col gap-1.5 text-xs animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400">
+                        Rolled: [{recoveryRoll.dice.join(', ')}]
+                        {recoveryRoll.isZeroDice && ' (0d: lowest)'}
+                      </span>
+                      <span className="font-bold text-amber-300">
+                        +{recoveryRoll.ticks} Tick{recoveryRoll.ticks > 1 ? 's' : ''}
+                        {recoveryRoll.isCritical && ' (CRITICAL!)'}
+                      </span>
+                    </div>
+
+                    {harmDowngradedEvent && (
+                      <div className="p-2 rounded bg-emerald-950/60 border border-emerald-500/80 text-emerald-300 text-xs font-bold text-center shadow-xs">
+                        🎉 Healing Clock Filled! All harm levels shifted down by 1 tier.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Activity 3: Reduce Heat */}
