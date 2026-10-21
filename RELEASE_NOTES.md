@@ -6,6 +6,33 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.3.0] — 2026-10-21
+
+### 🎭 Live Mid-Session NPC Creation & Contact Linking
+
+This release enables players and Game Masters to dynamically create NPCs, register emergent street factions, and forge scoundrel ties mid-campaign, mid-session, or mid-score without interrupting tabletop flow.
+
+#### 🌟 New Features & Enhancements
+
+* **Global Quick-Action Shortcut (`+ NPC`)**:
+  * Added a persistent `+ NPC` quick-action button in the primary navigation header, accessible during any phase of play (Free Play, Score, Downtime) for both Players and GMs.
+  * Launches the new `QuickNpcModal` with instant keyboard autofocus and streamlined data entry.
+
+* **Universal Quick-Create NPC Modal (`QuickNpcModal.tsx`)**:
+  * Fast capture of NPC Name, Role/Profession, Quirk, and First Encounter context.
+  * **On-the-Fly Faction Registration**: Assign to an existing campaign faction, mark as *Independent / Unaligned*, or type in a new custom street faction name that is instantly registered in the campaign.
+  * **Optional Scoundrel Relation Link**: Pre-selects the active player's scoundrel, allowing immediate assignment of 1–100 sentiment score (default `50`), relationship badges (Mentor, Debtor, Creditor, etc.), and narrative notes.
+  * Visibility toggle: Player-created NPCs default to Public; GMs can toggle between Public and GM-Only.
+
+* **Character Sheet Contact Connection & Inline Creation (`CharacterSheet.tsx`)**:
+  * Added `+ Add / Connect Contact` action to the *Street Contacts & Relations* section header.
+  * Dual-mode dialog:
+    * **Connect Existing NPC**: Searchable dropdown of campaign NPCs not yet tied to this character, with sentiment slider and badge toggles.
+    * **Quick Create New NPC**: Seamlessly opens `QuickNpcModal` pre-linked to this scoundrel.
+  * Immediately updates the scoundrel's sheet and broadcasts via Supabase Realtime.
+
+---
+
 ## [0.2.0] — 2026-10-21
 
 ### ⚔️ NPC Faction Affiliations & Multi-Character Relations
