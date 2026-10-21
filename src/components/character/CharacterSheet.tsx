@@ -70,7 +70,7 @@ export function CharacterSheet({
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [advancingAttribute, setAdvancingAttribute] = useState<AttributeName | null>(null);
-  const [levelUpTab, setLevelUpTab] = useState<'playbook' | 'veteran' | 'action'>('playbook');
+  const [levelUpTab, setLevelUpTab] = useState<'playbook' | 'veteran'>('playbook');
   const [veteranPlaybookFilter, setVeteranPlaybookFilter] = useState<string>('all');
   const [managingBadgesRelId, setManagingBadgesRelId] = useState<string | null>(null);
   const [newLabelName, setNewLabelName] = useState('');
@@ -254,22 +254,6 @@ export function CharacterSheet({
     onUpdateCharacter({
       ...character,
       special_abilities: [...character.special_abilities, newAbility],
-      playbook_xp: Math.max(0, character.playbook_xp - 8),
-      updated_at: new Date().toISOString()
-    });
-    setShowLevelUpModal(false);
-  };
-
-  const advanceActionFromPlaybookXp = (action: ActionName) => {
-    if (character.playbook_xp < 8) return;
-    const currentDots = character.action_dots[action] || 0;
-    if (currentDots >= 4) return;
-    onUpdateCharacter({
-      ...character,
-      action_dots: {
-        ...character.action_dots,
-        [action]: currentDots + 1
-      },
       playbook_xp: Math.max(0, character.playbook_xp - 8),
       updated_at: new Date().toISOString()
     });
@@ -1025,7 +1009,7 @@ export function CharacterSheet({
             </div>
 
             <p className="text-xs text-zinc-300">
-              You have accumulated 6 {ATTRIBUTES[advancingAttribute].label} XP! Choose an action within {ATTRIBUTES[advancingAttribute].label} to advance by +1 dot (max 4):
+              You have accumulated 6 {ATTRIBUTES[advancingAttribute].label} XP! Choose an action within {ATTRIBUTES[advancingAttribute].label} to advance by +1 dot (standard max 3 dots, or 4 with Mastery):
             </p>
 
             <div className="flex flex-col gap-2">
@@ -1129,11 +1113,11 @@ export function CharacterSheet({
               </div>
 
               <p className="text-xs text-zinc-300 leading-snug">
-                You have accumulated 8 Playbook XP! Choose your reward according to Blades in the Dark rules: a special ability from your playbook, a veteran ability from another playbook, or +1 dot in any action (max 4).
+                You have accumulated 8 Playbook XP! According to the Blades in the Dark SRD (p. 48), Playbook XP allows you to unlock an additional Special Ability from your playbook or select a Veteran ability from another playbook. (Action dots are advanced via Attribute XP tracks).
               </p>
 
               {/* 3 Navigation Tabs */}
-              <div className="grid grid-cols-3 gap-2 border-b border-zinc-800 pb-2">
+              <div className="grid grid-cols-2 gap-2 border-b border-zinc-800 pb-2">
                 <button
                   type="button"
                   onClick={() => setLevelUpTab('playbook')}
@@ -1144,7 +1128,7 @@ export function CharacterSheet({
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  Playbook Ability ({availablePlaybookAbilities.length})
+                  Playbook Special Ability ({availablePlaybookAbilities.length})
                 </button>
                 <button
                   type="button"
@@ -1156,19 +1140,7 @@ export function CharacterSheet({
                   }`}
                 >
                   <Award className="w-3.5 h-3.5" />
-                  Veteran Ability
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLevelUpTab('action')}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                    levelUpTab === 'action'
-                      ? 'bg-amber-500 text-black shadow'
-                      : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
-                  }`}
-                >
-                  <Dices className="w-3.5 h-3.5" />
-                  +1 Action Dot
+                  Veteran Special Ability
                 </button>
               </div>
 
@@ -1254,60 +1226,6 @@ export function CharacterSheet({
                       </button>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Tab 3: Action Dot (+1 Any) */}
-              {levelUpTab === 'action' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-h-80 overflow-y-auto p-1">
-                  {(Object.entries(ATTRIBUTES) as [AttributeName, { label: string; xpKey: string; actions: ActionName[] }][]).map(
-                    ([attrKey, attrData]) => (
-                      <div key={attrKey} className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 flex flex-col gap-2">
-                        <span className="text-[11px] uppercase font-bold tracking-wider text-amber-400 border-b border-zinc-800 pb-1">
-                          {attrData.label}
-                        </span>
-                        <div className="flex flex-col gap-1.5">
-                          {attrData.actions.map((act) => {
-                            const currentDots = character.action_dots[act] || 0;
-                            const isMax = currentDots >= 4;
-
-                            return (
-                              <button
-                                key={act}
-                                type="button"
-                                disabled={isMax}
-                                onClick={() => advanceActionFromPlaybookXp(act)}
-                                className="p-2 rounded bg-zinc-900 hover:bg-amber-950/40 border border-zinc-800 hover:border-amber-500 transition-all flex items-center justify-between disabled:opacity-40 disabled:cursor-not-allowed group text-left"
-                              >
-                                <span className="text-xs font-medium capitalize text-zinc-200 group-hover:text-amber-400">
-                                  {act}
-                                </span>
-                                <div className="flex items-center gap-1.5">
-                                  <div className="flex items-center gap-0.5">
-                                    {Array.from({ length: 4 }, (_, i) => (
-                                      <div
-                                        key={i}
-                                        className={`w-2 h-2 rounded-xs border ${
-                                          i < currentDots
-                                            ? 'bg-amber-400 border-amber-300'
-                                            : i === currentDots
-                                            ? 'bg-amber-500/30 border-dashed border-amber-400 animate-pulse'
-                                            : 'bg-zinc-950 border-zinc-700'
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
-                                  <span className="text-[10px] font-bold text-amber-400 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 group-hover:bg-amber-500 group-hover:text-black transition-colors">
-                                    {isMax ? 'Max' : '+1'}
-                                  </span>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )
-                  )}
                 </div>
               )}
 

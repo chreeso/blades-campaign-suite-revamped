@@ -61,8 +61,9 @@ Every action roll has a **Position** (how dangerous it is) and an **Effect** (ho
 * Players can resist any consequence announced by the GM.
 * Resistance cannot fail; it always negates or reduces the consequence.
 * Player rolls the associated **Attribute** pool:
+  - The pool equals the scoundrel's **Attribute Rating** (the count of actions under that attribute with $\ge 1$ dot — the first column).
   - **Insight**: Hunt, Study, Survey, Tinker.
-  - **Prowess**: Finesse, Prowl, Skulk, Wreck.
+  - **Prowess**: Finesse, Prowl, Skirmish, Wreck.
   - **Resolve**: Attune, Command, Consort, Sway.
 * **Stress Cost**: `6 - highest die`.
   - If critical (two 6s): **Clear 1 stress** instead of taking stress!

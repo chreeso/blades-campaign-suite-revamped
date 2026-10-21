@@ -6,6 +6,44 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.4.1] — 2026-10-21
+
+### ⚖️ SRD Attribute Advancement Alignment & Knowledge Sync
+
+This patch aligns character advancement and attribute ratings strictly with the official **Blades in the Dark System Reference Document (SRD p. 48)**, restoring the 6-XP attribute advancement trigger, adding calculated attribute ratings, purifying playbook advancement, and updating the ground-truth knowledge base.
+
+#### 🌟 New Features & Enhancements
+
+* **Restored Attribute Advancement Trigger (`CharacterSheet.tsx`)**:
+  * Added a prominent `Advance (6 XP)` button to each attribute header (Insight, Prowess, Resolve) whenever 6 XP is accumulated.
+  * Launches the targeted modal allowing players to select any nested action to advance by +1 dot, resetting the 6 XP upon confirmation.
+  * Enforces the standard SRD action rating ceiling of **3 dots** (or 4 dots with crew Mastery).
+
+* **Calculated Attribute Ratings Display (`CharacterSheet.tsx`)**:
+  * Dynamically calculates each Attribute Rating (count of actions in that attribute with $\ge 1$ dot — the first column).
+  * Displays the rating as a dedicated badge in each attribute header (e.g., `Insight: 2d`, `Prowess: 3d`, `Resolve: 1d`).
+  * Updated the `Resist` button label to explicitly display the scoundrel's resistance dice pool size.
+
+* **Playbook Advancement SRD Purification (`CharacterSheet.tsx`)**:
+  * Removed the non-SRD "+1 Action Dot" option from the 8-XP Playbook advancement dialog.
+  * Streamlined Playbook advancement to strictly offer **Playbook Special Abilities** and **Veteran Special Abilities** per SRD p. 48.
+  * Guaranteed that Action Dots can only be advanced through their respective Attribute XP tracks.
+
+#### 📚 Knowledge Base Synchronizations (`.agent/knowledge/`)
+
+* **`character_playbooks.md`**:
+  * Corrected Section 3 to specify that Playbook XP (8 XP) is exclusively for Special Abilities.
+  * Documented the Attribute Rating derivation and the 3-dot standard / 4-dot Mastery ceiling invariants.
+* **`core_mechanics.md`**:
+  * Specified that Resistance pools equal the calculated Attribute Rating.
+  * Corrected Prowess action terminology (*Skulk* $\rightarrow$ *Skirmish*).
+* **`glossary.md`**:
+  * Added explicit canonical definitions for **Attribute Rating** and **Advancement & XP Tracks**.
+* **`crew_playbooks.md`**:
+  * Documented the **Mastery** upgrade (unlocks 4th dot in action ratings) and **Training** upgrades (+1 bonus XP in downtime).
+
+---
+
 ## [0.4.0] — 2026-10-21
 
 ### 🎯 Character Creation & Advancement Separation

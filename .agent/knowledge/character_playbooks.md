@@ -134,14 +134,23 @@ Every scoundrel begins with:
   - **2 General Dots**: Allocated to any action.
 * **Rating Ceiling**: No action rating may exceed **2 dots** during character creation.
 
-### XP Tracks & Advancement Engine
-1. **Playbook Track** (8 XP boxes): When full (8 XP), spend 8 XP to choose 1 of 3 SRD advancement paths:
+### Attribute Rating Invariant (Resistance Pool)
+* An attribute's rating (0 to 4) is equal to the number of actions under that attribute with **at least one dot** (i.e., the first column of dots on the character sheet).
+* Attribute ratings determine the number of dice rolled when resisting consequences or determining lowest attribute for vice rolls.
+
+### XP Tracks & Advancement Engine (SRD p. 48)
+1. **Playbook Track** (8 XP boxes): When full (8 XP), clear the track and choose an additional **Special Ability**:
    - **Playbook Ability**: Unlock an unlearned Special Ability from your playbook.
    - **Veteran Ability**: Unlock a Special Ability from any of the other 6 scoundrel playbooks.
-   - **Action Dot**: +1 dot in any action rating across the sheet (max 4 dots).
-2. **Insight Track** (6 XP boxes): Spend 6 XP to advance +1 action dot in Hunt, Study, Survey, or Tinker (max 4 dots).
-3. **Prowess Track** (6 XP boxes): Spend 6 XP to advance +1 action dot in Finesse, Prowl, Skirmish, or Wreck (max 4 dots).
-4. **Resolve Track** (6 XP boxes): Spend 6 XP to advance +1 action dot in Attune, Command, Consort, or Sway (max 4 dots).
+   - *(Note: In official Blades in the Dark rules, Playbook XP is strictly for Special Abilities and does NOT grant action dots.)*
+2. **Insight Track** (6 XP boxes): When full (6 XP), clear the track and add **+1 action dot** to Hunt, Study, Survey, or Tinker.
+3. **Prowess Track** (6 XP boxes): When full (6 XP), clear the track and add **+1 action dot** to Finesse, Prowl, Skirmish, or Wreck.
+4. **Resolve Track** (6 XP boxes): When full (6 XP), clear the track and add **+1 action dot** to Attune, Command, Consort, or Sway.
+
+### Action Rating Ceiling Invariants
+* **Character Creation**: Maximum rating is **2 dots** in any action.
+* **Standard Advancement**: Maximum rating is **3 dots** in any action.
+* **Crew Mastery Upgrade**: Unlocks the ability to advance action ratings to **4 dots**.
 
 ### Play Mode vs. Manual Edit Mode Invariant
 * **Play Mode (Default)**: Action rating dots are locked against inline manipulation to safeguard against misclicks. Clicking an action row triggers an action roll.

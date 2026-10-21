@@ -22,6 +22,10 @@ This reference glossary provides concise, unambiguous definitions of core terms 
   - Factors modifying effect: Quality/Tier difference, Scale, Potency.
 * **Fortune Roll**: Dispassionate roll by the GM or player to determine an outcome outside direct player skill or when luck/factions collide.
 * **Resistance Roll**: A roll using an Attribute rating (Insight, Prowess, Resolve) to negate or mitigate a consequence. Stress suffered = `6 - highest die` (or recover 1 stress on a Critical).
+* **Attribute Rating**: The rating of Insight, Prowess, or Resolve (0 to 4), calculated as the number of actions under that attribute with at least one dot (the first column of dots). Determines dice pool for resistance rolls and vice indulgence.
+* **Advancement & XP Tracks**: System for scoundrel progression. When an XP track is full, clear the marks and take an advance:
+  - **Playbook Track (8 XP)**: Unlock an additional Special Ability (playbook or veteran).
+  - **Attribute Track (6 XP)**: Add +1 action dot to an action nested under that attribute (capped at 3 dots, or 4 with crew Mastery).
 * **Devil's Bargain**: An optional GM/player offer: +1d to an action roll in exchange for an immediate, irrevocable narrative consequence, regardless of roll success.
 * **Push Yourself**: Spend 2 stress to either take +1d to a roll or improve effect by +1 level.
 
