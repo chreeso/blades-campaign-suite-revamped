@@ -75,3 +75,4 @@ Relationships between factions (and between the Crew and NPC factions) are track
 * **Faction Membership**: Each NPC can be linked to a campaign Faction (`faction_id`) with a defined rank or role (e.g. Leader, Lieutenant, Enforcer, Fence) or designated as Independent.
 * **1:N Multi-Player Ties**: Any NPC can hold distinct relationship scores (1–100) and badges with multiple player characters simultaneously.
 * **Open Table Visibility**: Relationships are public to the table by default with optional secret GM/player plot notes.
+* **Mid-Session Dynamic Creation**: NPCs and emergent factions can be created on the fly mid-score or mid-session via global quick-actions or directly from the Character Sheet, immediately linking initial relationship states.
