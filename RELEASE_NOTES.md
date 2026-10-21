@@ -6,6 +6,28 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.5.0] — 2026-10-21
+
+### ⚔️ The Engagement Roll & Score Planning Engine
+
+This release introduces the canonical **Engagement Roll** system from the *Blades in the Dark* System Reference Document (RAW p. 127–131). It allows the crew to establish their operational plan archetype, enter required details, evaluate situational advantages and disadvantages, and roll for their initial fiction and starting obstacle position (**Controlled**, **Risky**, or **Desperate**).
+
+#### 🌟 Key Improvements
+
+* **Engagement Roll Dialog (`EngagementRollModal.tsx`)**:
+  * **6 Operation Plan Archetypes**: Direct support for *Assault, Deception, Stealth, Occult, Social,* and *Transport*, complete with thematic icons, rules descriptions, and prompt examples.
+  * **Required Plan Detail**: Enforces single-sentence detail input tailored to the selected plan archetype (e.g. point of attack, method of deception, infiltration route).
+  * **Dynamic Target & Tier Comparison**: Automatic calculation of Tier difference against campaign factions or independent targets (+1d per tier above target; -1d per tier below target).
+  * **Operational Circumstance Toggles**: Checklists for canonical advantage (+1d bold, +1d target vulnerability, +1d contact intel, +1d prior setup) and disadvantage (-1d target fortified, -1d hostile territory/war, -1d supernatural/weather hazards).
+  * **Deterministic Fortune Resolution (`roller.ts`)**: Calculates net dice pool starting from 1d base luck, with 0-dice fallback (`min(2d)`). Outputs starting position (Critical/6 $\to$ Controlled, 4/5 $\to$ Risky, 1-3 $\to$ Desperate) and initial obstacle friction prompt.
+
+* **Score Initiation & Seamless Action Transition (`page.tsx`, `DiceRoller.tsx`)**:
+  * Added prominent **"Plan Score"** launcher button to the main top-bar header.
+  * **"Begin First Action"** handoff: Concluding an engagement roll immediately transitions into the `DiceRoller` with the determined starting position and narrative context preloaded.
+  * **"Log in Journal"**: Automatically formats and records the score plan, target, modifiers, dice roll, and starting position directly into the campaign ledger as a permanent `score_log`.
+
+---
+
 ## [0.4.2] — 2026-10-21
 
 ### ⚓ Action Rating Cap (3 Dots) & Crew Mastery Gating
