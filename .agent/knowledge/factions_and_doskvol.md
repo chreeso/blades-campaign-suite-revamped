@@ -76,3 +76,19 @@ Relationships between factions (and between the Crew and NPC factions) are track
 * **1:N Multi-Player Ties**: Any NPC can hold distinct relationship scores (1–100) and badges with multiple player characters simultaneously.
 * **Open Table Visibility**: Relationships are public to the table by default with optional secret GM/player plot notes.
 * **Mid-Session Dynamic Creation**: NPCs and emergent factions can be created on the fly mid-score or mid-session via global quick-actions or directly from the Character Sheet, immediately linking initial relationship states.
+
+
+---
+
+## 6. Street-Level Procedural Generation & Cartography Landmarks
+
+* **Street Oracles (SRD RAW p. 300–305)**:
+  * Generates street scenes comprising 10 distinct traits: **Street Name** (prefix/suffix combinations or historic titles), **Layout Type** (alleys, canals, catwalks, boulevards), **Mood**, **Sensory Impressions** (*Sight, Sound, Smell*), **Building Type**, **Architectural Oddity**, **Street Encounter**, and **Occult Complication**.
+  * **District Context Biasing**: Rolls are dynamically weighted toward each district's unique socio-economic character (e.g. factory soot in Coalridge, pleasure barges in Silkshore, aristocratic guards in Brightstone).
+  * **Improvisational Trait Locking**: GMs can lock any subset of traits (`locked: StreetTrait[]`) to preserve specific elements while rerolling surrounding atmospheric details.
+  * **Campaign Journal Integration**: Instant export of generated street dossiers to the session log (`JournalLedger`).
+* **Cartography Pin-Drop Engine**:
+  * Precision coordinate pinning on the interactive Doskvol SVG map via right-click or crosshair mode.
+  * Ray-casting point-in-polygon algorithm automatically maps SVG `(x, y)` coordinates to one of the 12 canonical districts, with nearest-neighbor fallback.
+  * Pin categorization: `Landmark`, `Hideout`, `Hazard`, `Shop / Fence`, and `Rumor`.
+  * **Role-Based Visibility (RLS)**: Pins support `gm_only` secret flags to hide prep notes and hidden assets from players, strictly enforced at the Supabase PostgreSQL layer (`map_pins`).
