@@ -6,6 +6,38 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.10.0] — 2026-10-22
+
+### 🏙️ Deep Street-Level Procedural District Generator & Map Pin-Drop System
+
+This release completes **Epic 5.3: Deep Street-Level Procedural District Generator**, transforming the macro-level Doskvol district cartography into a granular, alleyway-level generator for improvisation and persistent world-building.
+
+#### 🌟 Key Improvements
+
+* **Street & Building Oracles Engine (`streetOracles.ts`, `streetGenerator.ts`)**:
+  * Faithful implementation of Blades in the Dark street, building, and encounter improvisation tables (RAW p. 300–305).
+  * Generates **Street Name** (prefix/suffix combinations or rare historic titles like *"Widow Kessa's Turn"* or *"Nine Bells Crossing"*), **Layout Type**, **Atmospheric Mood**, **Sensory Impressions** (*Sight, Sound, Smell*), **Building Type**, **Architectural Oddity**, **Street Encounter**, and **Occult Complication**.
+  * **District-Biased Generation**: Contextual flavor pools dynamically bias roll results toward the local color of all 12 canonical districts (e.g., Crow's Foot gang clashes, Docks leviathan hulls and butchers, Silkshore lantern-lit canals and pleasure dens, Brightstone gilded boulevards and Bluecoat patrols).
+  * **Granular Lock & Reroll Matrix**: GMs can pin any combination of individual traits (e.g. keep an architectural oddity and building use) while rerolling specific elements or regenerating the entire scene around them.
+
+* **Interactive Street Generator Modal (`StreetGeneratorModal.tsx`)**:
+  * Dark gothic modal with lock/unlock toggles for every street attribute, tactile audio ratchet cues (`playClockTickSound`), and district selector.
+  * One-click "Log to Campaign Journal" exporting the complete street scene into the session ledger (`JournalLedger.tsx`).
+  * Direct "Save as Map Pin" action instantly dropping the generated street as a persistent landmark.
+
+* **Interactive SVG Pin-Drop & Landmark Management (`DoskvolMap.tsx`, `MapPinEditor.tsx`, `mapPins.ts`)**:
+  * **Right-Click & Crosshair Pinning**: Right-click anywhere on the interactive Doskvol SVG map (or click the "Drop Pin" header action) to target precise coordinates `(x, y)` and create custom markers.
+  * **Point-in-Polygon District Resolution**: Built-in ray-casting algorithm (`findDistrictAtPoint`) automatically detects the target district, with nearest-neighbor fallback for outer flats and river coordinates.
+  * **Categorized Pins**: Distinct jewel-toned markers for **Landmarks**, **Hideouts**, **Hazards**, **Shops / Fences**, and **Rumors** with hover tooltips and interactive coordinate tags.
+  * **Role-Based Visibility (GM Secret vs Public)**: GMs can toggle landmarks as `gm_only` to hide secret faction hideouts, traps, and undercover contacts from player views.
+  * **Reactive Client Persistence & Cross-Tab Sync**: Multi-tab live sync via React 19 `useSyncExternalStore` with localStorage persistence.
+
+* **Database & Row-Level Security (`20261022000000_map_pins.sql`)**:
+  * Complete Supabase PostgreSQL migration for the `map_pins` table, strictly partitioned by `campaign_id`.
+  * Comprehensive Row-Level Security (RLS) enforcing campaign member access and restricting `gm_only` pins to campaign Game Masters.
+
+---
+
 ## [0.9.0] — 2026-10-22
 
 ### 🎭 Victorian Pill Sub-Tabs Navigation & Campaign Scoundrel Roster
