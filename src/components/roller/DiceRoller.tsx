@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Character,
   Clock,
@@ -112,6 +112,31 @@ export function DiceRoller({
   const [isRolling, setIsRolling] = useState(false);
   const [selectedClockId, setSelectedClockId] = useState<string>(clocks[0]?.id || '');
   const [setupRegistered, setSetupRegistered] = useState(false);
+
+  // Close on Escape (unless roll animation is active)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isRolling) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRolling, onClose]);
+
+  // Outside click handling (guarded against accidental drag-outs)
+  const backdropMouseDownRef = useRef(false);
+
+  const handleBackdropMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    backdropMouseDownRef.current = e.target === e.currentTarget;
+  };
+
+  const handleBackdropMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (backdropMouseDownRef.current && e.target === e.currentTarget && !isRolling) {
+      onClose();
+    }
+    backdropMouseDownRef.current = false;
+  };
 
   // Calculate Base Pool for Action / Resistance
   const baseDots =
@@ -285,7 +310,11 @@ export function DiceRoller({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+    <div
+      onMouseDown={handleBackdropMouseDown}
+      onMouseUp={handleBackdropMouseUp}
+      className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50"
+    >
       <div className="w-full max-w-xl bg-zinc-900 border border-zinc-700 rounded-2xl p-6 shadow-2xl flex flex-col gap-5 text-zinc-100 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800 pb-3">

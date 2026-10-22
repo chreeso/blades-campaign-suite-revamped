@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Crew,
   Faction,
@@ -86,6 +86,31 @@ export function EngagementRollModal({
 
   // Roll & Outcome State
   const [isRolling, setIsRolling] = useState(false);
+
+  // Close on Escape (unless roll animation is active)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isRolling) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRolling, onClose]);
+
+  // Outside click handling (guarded against accidental drag-outs)
+  const backdropMouseDownRef = useRef(false);
+
+  const handleBackdropMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    backdropMouseDownRef.current = e.target === e.currentTarget;
+  };
+
+  const handleBackdropMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (backdropMouseDownRef.current && e.target === e.currentTarget && !isRolling) {
+      onClose();
+    }
+    backdropMouseDownRef.current = false;
+  };
   const [rollResult, setRollResult] = useState<EngagementRollResult | null>(null);
   const [hasLogged, setHasLogged] = useState(false);
 
@@ -140,7 +165,11 @@ export function EngagementRollModal({
   const PlanIcon = PLAN_ICONS[selectedPlan];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 overflow-y-auto">
+    <div
+      onMouseDown={handleBackdropMouseDown}
+      onMouseUp={handleBackdropMouseUp}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 overflow-y-auto"
+    >
       <div className="relative w-full max-w-3xl rounded-xl bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden flex flex-col my-8">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-zinc-800 bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-950 px-6 py-4">
