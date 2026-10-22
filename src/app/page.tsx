@@ -18,7 +18,8 @@ import {
   RollPosition,
   OperationPlanType,
   EngagementRollResult,
-  SetupBonus
+  SetupBonus,
+  ProceduralStreet
 } from '@/types/blades';
 import { DOSKVOL_FACTIONS } from '@/lib/constants/doskvol';
 import { SCOUNDREL_PLAYBOOKS } from '@/lib/constants/playbooks';
@@ -40,6 +41,7 @@ import { IncarcerationModal } from '@/components/campaign/IncarcerationModal';
 import { ScoreGeneratorModal } from '@/components/campaign/ScoreGeneratorModal';
 import { DoskvolMap } from '@/components/campaign/DoskvolMap';
 import { ScoreOracle } from '@/lib/constants/oracles';
+import { formatStreetForJournal } from '@/lib/streetGenerator';
 import { playClockTickSound, playClockCompleteSound, isAudioMuted, toggleAudioMute } from '@/lib/audio';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { CampaignInviteModal } from '@/components/campaign/CampaignInviteModal';
@@ -871,6 +873,24 @@ export default function Home() {
     setTransactions((prev) => [newTx, ...prev]);
   };
 
+  // Street-Level Generator → Journal export
+  const handleLogStreet = (street: ProceduralStreet, districtName: string) => {
+    const now = new Date().toISOString();
+    const entry: JournalEntry = {
+      id: `jrn_street_${Date.now()}`,
+      campaign_id: activeCampaignId,
+      author_id: 'current_user',
+      title: `Street Discovered: ${street.name} (${districtName})`,
+      content: formatStreetForJournal(street, districtName),
+      entry_type: 'session',
+      visibility: 'campaign_public',
+      created_at: now,
+      updated_at: now
+    };
+    setJournalEntries((prev) => [entry, ...prev]);
+    broadcastChange('journal_update', entry);
+  };
+
   // Engagement Roll Handlers
   const handleLaunchFirstActionFromEngagement = (
     position: RollPosition,
@@ -1224,6 +1244,7 @@ ${result.narrative}
             crew={crew}
             factions={factions}
             isGm={isGm}
+            onLogStreet={handleLogStreet}
           />
         )}
       </main>
