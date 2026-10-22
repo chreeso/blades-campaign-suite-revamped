@@ -19,7 +19,8 @@ import {
   OperationPlanType,
   EngagementRollResult,
   SetupBonus,
-  ProceduralStreet
+  ProceduralStreet,
+  MapPin
 } from '@/types/blades';
 import { DOSKVOL_FACTIONS } from '@/lib/constants/doskvol';
 import { SCOUNDREL_PLAYBOOKS } from '@/lib/constants/playbooks';
@@ -42,6 +43,7 @@ import { ScoreGeneratorModal } from '@/components/campaign/ScoreGeneratorModal';
 import { DoskvolMap } from '@/components/campaign/DoskvolMap';
 import { ScoreOracle } from '@/lib/constants/oracles';
 import { formatStreetForJournal } from '@/lib/streetGenerator';
+import { MapPinDraft, saveMapPins, useMapPins, visiblePinsFor } from '@/lib/mapPins';
 import { playClockTickSound, playClockCompleteSound, isAudioMuted, toggleAudioMute } from '@/lib/audio';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { CampaignInviteModal } from '@/components/campaign/CampaignInviteModal';
@@ -420,6 +422,8 @@ export default function Home() {
   const [campaignLabels, setCampaignLabels] = useState<CampaignRelationshipLabel[]>(INITIAL_CAMPAIGN_LABELS);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(INITIAL_JOURNAL);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
+  // Campaign-scoped map pins, persisted locally and synced across tabs.
+  const mapPins = useMapPins(activeCampaignId);
 
   const [activeTab, setActiveTab] = useState<'character' | 'crew' | 'clocks' | 'factions' | 'npcs' | 'journal' | 'map'>('character');
 
@@ -891,6 +895,44 @@ export default function Home() {
     broadcastChange('journal_update', entry);
   };
 
+  // Map Pins (campaign-scoped landmarks)
+  const updateMapPins = (updater: (prev: MapPin[]) => MapPin[]) => {
+    saveMapPins(activeCampaignId, updater(mapPins));
+  };
+
+  const handleAddPin = (draft: MapPinDraft) => {
+    const now = new Date().toISOString();
+    const pin: MapPin = {
+      ...draft,
+      visibility: !isGm && draft.visibility === 'gm_only' ? 'campaign_public' : draft.visibility,
+      id: `pin_${Date.now()}`,
+      campaign_id: activeCampaignId,
+      created_by: 'current_user',
+      created_at: now,
+      updated_at: now
+    };
+    updateMapPins((prev) => [...prev, pin]);
+  };
+
+  const handleUpdatePin = (id: string, draft: MapPinDraft) => {
+    updateMapPins((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              ...draft,
+              visibility: !isGm && draft.visibility === 'gm_only' ? p.visibility : draft.visibility,
+              updated_at: new Date().toISOString()
+            }
+          : p
+      )
+    );
+  };
+
+  const handleDeletePin = (id: string) => {
+    updateMapPins((prev) => prev.filter((p) => p.id !== id));
+  };
+
   // Engagement Roll Handlers
   const handleLaunchFirstActionFromEngagement = (
     position: RollPosition,
@@ -1244,7 +1286,11 @@ ${result.narrative}
             crew={crew}
             factions={factions}
             isGm={isGm}
+            pins={visiblePinsFor(mapPins, isGm)}
             onLogStreet={handleLogStreet}
+            onAddPin={handleAddPin}
+            onUpdatePin={handleUpdatePin}
+            onDeletePin={handleDeletePin}
           />
         )}
       </main>

@@ -138,3 +138,38 @@ export const DOSKVOL_DISTRICTS: DistrictInfo[] = [
 export function getDistrictById(id: DistrictId): DistrictInfo {
   return DOSKVOL_DISTRICTS.find((d) => d.id === id) ?? DOSKVOL_DISTRICTS[0];
 }
+
+/** Parses a simple polygon SVG path ("M x y L x y ... Z") into points. */
+export function parsePolygonPath(path: string): { x: number; y: number }[] {
+  const nums = path.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+  const points: { x: number; y: number }[] = [];
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    points.push({ x: nums[i], y: nums[i + 1] });
+  }
+  return points;
+}
+
+/** Ray-casting point-in-polygon test. */
+function pointInPolygon(x: number, y: number, poly: { x: number; y: number }[]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/** Returns the district containing the given map coordinate, or null for open ground / river. */
+export function findDistrictAtPoint(x: number, y: number): DistrictInfo | null {
+  return DOSKVOL_DISTRICTS.find((d) => pointInPolygon(x, y, parsePolygonPath(d.path))) ?? null;
+}
+
+/** Returns the district whose center is closest to the given map coordinate. */
+export function findNearestDistrict(x: number, y: number): DistrictInfo {
+  return DOSKVOL_DISTRICTS.reduce((best, d) =>
+    Math.hypot(d.center.x - x, d.center.y - y) < Math.hypot(best.center.x - x, best.center.y - y) ? d : best
+  );
+}
