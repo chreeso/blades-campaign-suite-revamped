@@ -352,3 +352,79 @@ export interface IncarcerationOutcome {
   suggestedConsequences: string[];
   prisonClaimsAvailable?: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Street-Level Procedural Generator & Map Landmarks (Epic 5.3)
+// ---------------------------------------------------------------------------
+
+/** Canonical Doskvol district identifiers used by the map and street generator. */
+export type DistrictId =
+  | 'crows_foot'
+  | 'the_docks'
+  | 'silkshore'
+  | 'charterhall'
+  | 'brightstone'
+  | 'six_towers'
+  | 'coalridge'
+  | 'nightmarket'
+  | 'whitecrown'
+  | 'dunslough'
+  | 'barrowcleft'
+  | 'ironhook_prison';
+
+export type DistrictWealth = 'Poor' | 'Moderate' | 'Wealthy';
+
+/** Lockable / rerollable fields of a generated street scene. */
+export type StreetTrait =
+  | 'name'
+  | 'streetType'
+  | 'mood'
+  | 'sight'
+  | 'sound'
+  | 'smell'
+  | 'building'
+  | 'oddity'
+  | 'encounter'
+  | 'complication';
+
+export interface ProceduralStreet {
+  districtId: DistrictId;
+  name: string;
+  streetType: string;
+  mood: string;
+  sight: string;
+  sound: string;
+  smell: string;
+  building: string;
+  oddity: string;
+  encounter: string;
+  complication: string;
+}
+
+/** District-specific flavor pools that bias generation toward local color. */
+export interface DistrictFlavor {
+  districtId: DistrictId;
+  streetTypes: string[];
+  buildings: string[];
+  encounters: string[];
+  sights: string[];
+}
+
+export type MapPinCategory = 'landmark' | 'hideout' | 'hazard' | 'shop' | 'rumor';
+
+/** Persistent campaign marker dropped on the Doskvol map. */
+export interface MapPin {
+  id: string;
+  campaign_id: string;
+  district_id: DistrictId | null;
+  x: number;
+  y: number;
+  title: string;
+  category: MapPinCategory;
+  notes: string;
+  visibility: ContentVisibility;
+  street?: ProceduralStreet;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
