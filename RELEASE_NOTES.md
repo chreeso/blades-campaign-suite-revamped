@@ -6,6 +6,34 @@ The project follows [Semantic Versioning](https://semver.org/) and strict adhere
 
 ---
 
+## [0.9.0] — 2026-10-22
+
+### 🎭 Victorian Pill Sub-Tabs Navigation & Campaign Scoundrel Roster
+
+This release overhauls character switching within campaigns, replacing the legacy dropdown selector with an intuitive Victorian slate & amber pill sub-tab bar directly above the Scoundrel Sheet view.
+
+#### 🌟 Key Improvements
+
+* **Victorian Pill Sub-Tabs (`CharacterTabs.tsx`)**:
+  * Persistent pill sub-tabs embedded directly in the Scoundrel Sheet view, displaying each scoundrel's name, alias, and playbook badge (e.g. `Corvo "Crow" · Cutter`).
+  * Distinct active state styling featuring amber borders, subtle backdrops, and amber indicator glow.
+  * Clean integration with campaign state, keeping the top navigation focused on global campaign tools.
+
+* **Responsive Overflow Dropdown ("+ More")**:
+  * Automatically calculates visible scoundrels versus overflow roster members.
+  * Tucks excess characters into a "+ More" dropdown menu while guaranteeing the active character remains visible in the primary tab row.
+
+* **3-Dot Contextual Menu & Safe Scoundrel Retirement**:
+  * Discreet 3-dot trigger on each scoundrel tab offering "Retire / Delete Scoundrel".
+  * Integrated safety confirmation modal warning before permanent removal to prevent accidental data loss.
+  * Gracefully shifts active character focus to adjacent scoundrels upon deletion.
+
+* **Empty State Banner (`EmptyScoundrelState`)**:
+  * Atmospheric empty-state view rendered when a campaign has zero scoundrels.
+  * Features an inviting "Create First Scoundrel" button opening the character creator wizard.
+
+---
+
 ## [0.8.0] — 2026-10-21
 
 ### 🗺️ Procedural Job Oracles, Interactive Doskvol Cartography & Atmospheric Audio

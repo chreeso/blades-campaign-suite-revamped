@@ -25,6 +25,7 @@ import { SCOUNDREL_PLAYBOOKS } from '@/lib/constants/playbooks';
 import { CampaignSwitcher } from '@/components/ui/CampaignSwitcher';
 import { CharacterSheet } from '@/components/character/CharacterSheet';
 import { CharacterCreator, CharacterContactSelection } from '@/components/character/CharacterCreator';
+import { CharacterTabs, EmptyScoundrelState } from '@/components/character/CharacterTabs';
 import { QuickNpcModal, QuickNpcSubmitData } from '@/components/campaign/QuickNpcModal';
 import { ClocksManager } from '@/components/campaign/ClocksManager';
 import { FactionsTracker } from '@/components/campaign/FactionsTracker';
@@ -666,6 +667,18 @@ export default function Home() {
     setShowCreator(false);
   };
 
+  // Delete / Retire Scoundrel
+  const handleDeleteCharacter = (characterId: string) => {
+    setCharacters((prev) => {
+      const remaining = prev.filter((c) => c.id !== characterId);
+      if (activeCharacterId === characterId) {
+        setActiveCharacterId(remaining[0]?.id || '');
+      }
+      return remaining;
+    });
+    setCharacterRelations((prev) => prev.filter((r) => r.character_id !== characterId));
+  };
+
   // Relations & Labels Handlers
   const handleUpdateRelation = (updated: CharacterNpcRelation) => {
     setCharacterRelations((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
@@ -1114,50 +1127,42 @@ ${result.narrative}
             >
               <Lock className="w-3.5 h-3.5 text-red-400" /> Incarceration
             </button>
-
-            {activeTab === 'character' && (
-              <div className="flex items-center gap-2">
-                <select
-                  value={activeCharacterId}
-                  onChange={(e) => setActiveCharacterId(e.target.value)}
-                  className="bg-zinc-900 border border-zinc-700 rounded px-2.5 py-1.5 text-xs text-zinc-200 outline-none"
-                >
-                  {characters.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.playbook})
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => setShowCreator(true)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs shadow"
-                >
-                  <Plus className="w-3.5 h-3.5" /> New Character
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
         {/* Tab Views */}
-        {activeTab === 'character' && activeCharacter && (
-          <CharacterSheet
-            character={activeCharacter}
-            crew={crew}
-            npcs={npcs}
-            factions={factions}
-            relations={characterRelations.filter((r) => r.character_id === activeCharacter.id)}
-            campaignLabels={campaignLabels}
-            onUpdateCharacter={handleUpdateCharacter}
-            onUpdateRelation={handleUpdateRelation}
-            onCreateRelation={handleCreateRelation}
-            onCreateCampaignLabel={handleCreateCampaignLabel}
-            onQuickCreateNpc={handleQuickNpcSubmit}
-            onRollAction={handleRollAction}
-            onRollResistance={handleRollResistance}
-            isGm={isGm}
-            readOnly={false}
-          />
+        {activeTab === 'character' && (
+          <div className="flex flex-col gap-5">
+            <CharacterTabs
+              characters={characters}
+              activeCharacterId={activeCharacterId}
+              onSelectCharacter={setActiveCharacterId}
+              onNewCharacter={() => setShowCreator(true)}
+              onDeleteCharacter={handleDeleteCharacter}
+            />
+
+            {characters.length === 0 ? (
+              <EmptyScoundrelState onNewCharacter={() => setShowCreator(true)} />
+            ) : activeCharacter ? (
+              <CharacterSheet
+                character={activeCharacter}
+                crew={crew}
+                npcs={npcs}
+                factions={factions}
+                relations={characterRelations.filter((r) => r.character_id === activeCharacter.id)}
+                campaignLabels={campaignLabels}
+                onUpdateCharacter={handleUpdateCharacter}
+                onUpdateRelation={handleUpdateRelation}
+                onCreateRelation={handleCreateRelation}
+                onCreateCampaignLabel={handleCreateCampaignLabel}
+                onQuickCreateNpc={handleQuickNpcSubmit}
+                onRollAction={handleRollAction}
+                onRollResistance={handleRollResistance}
+                isGm={isGm}
+                readOnly={false}
+              />
+            ) : null}
+          </div>
         )}
 
         {activeTab === 'crew' && (
